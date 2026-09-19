@@ -1,0 +1,388 @@
+{
+  "schema_version": 3,
+  "items": [
+    {
+      "categoryCustom": "",
+      "status": "available",
+      "stock": "",
+      "delivery": "instant",
+      "deliveryHours": "",
+      "mainImage": {
+        "type": "none",
+        "value": ""
+      },
+      "gallery": [
+        {
+          "type": "none",
+          "value": ""
+        },
+        {
+          "type": "none",
+          "value": ""
+        },
+        {
+          "type": "none",
+          "value": ""
+        },
+        {
+          "type": "none",
+          "value": ""
+        }
+      ],
+      "thumbnail": {
+        "type": "none",
+        "value": ""
+      },
+      "footer": "INDRA BOT SYSTEM | Instant delivery",
+      "showTimestamp": true,
+      "saleEnds": "",
+      "content": "",
+      "fancyText": false,
+      "fancyStyle": "bold",
+      "ticketLineMode": "global",
+      "ticketLineText": "",
+      "plans": [
+        {
+          "id": "standard",
+          "label": "Standard",
+          "price": "19.99",
+          "oldPrice": "29.99",
+          "badge": ""
+        }
+      ],
+      "theme_id": "",
+      "isTemplate": true,
+      "createdAt": "2026-09-19T13:37:40",
+      "updatedAt": "2026-09-19T13:37:40",
+      "bot_id": "seller",
+      "id": "tpl-modern",
+      "name": "NovaNotes Pro - Notes app with AI search",
+      "tagline": "Your notes, instantly findable. Lifetime license, all future updates included.",
+      "category": "Software",
+      "currency": "$",
+      "license": "Lifetime + free updates",
+      "features": "Instant download after purchase\nWorks on Windows, Mac and Linux\nEnd-to-end encrypted sync\nAI-powered search across all notes\nImport from Evernote and Notion",
+      "bulletStyle": "checkmark",
+      "bulletCustom": "",
+      "included": "NovaNotes Pro installer (Windows/Mac/Linux)\nLifetime license key\nSetup guide (PDF)\nEmail support for 12 months",
+      "requirements": "Windows 10+ / macOS 12+ / Ubuntu 20.04+\n4 GB RAM\n200 MB free disk space",
+      "refund": "7-day money-back guarantee if the app does not work as described. Open a ticket and we will sort it out.",
+      "preset": "modern"
+    },
+    {
+      "categoryCustom": "",
+      "status": "coming_soon",
+      "stock": "",
+      "delivery": "instant",
+      "deliveryHours": "",
+      "mainImage": {
+        "type": "none",
+        "value": ""
+      },
+      "gallery": [
+        {
+          "type": "none",
+          "value": ""
+        },
+        {
+          "type": "none",
+          "value": ""
+        },
+        {
+          "type": "none",
+          "value": ""
+        },
+        {
+          "type": "none",
+          "value": ""
+        }
+      ],
+      "thumbnail": {
+        "type": "none",
+        "value": ""
+      },
+      "footer": "INDRA BOT SYSTEM | Instant delivery",
+      "showTimestamp": true,
+      "saleEnds": "",
+      "content": "",
+      "fancyText": false,
+      "fancyStyle": "bold",
+      "ticketLineMode": "global",
+      "ticketLineText": "",
+      "plans": [
+        {
+          "id": "standard",
+          "label": "Standard",
+          "price": "9",
+          "oldPrice": "",
+          "badge": ""
+        }
+      ],
+      "theme_id": "",
+      "isTemplate": true,
+      "createdAt": "2026-09-19T13:37:40",
+      "updatedAt": "2026-09-19T13:37:40",
+      "bot_id": "seller",
+      "id": "tpl-minimal",
+      "name": "The Freelance Launch Kit (E-book)",
+      "tagline": "120 pages on going from zero to your first paying client - worksheets included.",
+      "category": "E-book",
+      "currency": "$",
+      "license": "Personal use",
+      "features": "120-page PDF e-book\n15 fill-in worksheets\nCold email + proposal templates\nPricing calculator (Google Sheets)",
+      "bulletStyle": "sparkles",
+      "bulletCustom": "",
+      "included": "E-book PDF\nWorksheet pack\nFree lifetime updates",
+      "requirements": "Any PDF reader",
+      "refund": "Due to the digital nature, all sales are final - but message us if anything is wrong and we will fix it.",
+      "preset": "minimal"
+    },
+    {
+      "categoryCustom": "",
+      "status": "limited",
+      "stock": "50",
+      "delivery": "instant",
+      "deliveryHours": "",
+      "mainImage": {
+        "type": "none",
+        "value": ""
+      },
+      "gallery": [
+        {
+          "type": "none",
+          "value": ""
+        },
+        {
+          "type": "none",
+          "value": ""
+        },
+        {
+          "type": "none",
+          "value": ""
+        },
+        {
+          "type": "none",
+          "value": ""
+        }
+      ],
+      "thumbnail": {
+        "type": "none",
+        "value": ""
+      },
+      "footer": "INDRA BOT SYSTEM | Instant delivery",
+      "showTimestamp": true,
+      "saleEnds": "",
+      "content": "",
+      "fancyText": false,
+      "fancyStyle": "bold",
+      "ticketLineMode": "global",
+      "ticketLineText": "",
+      "plans": [
+        {
+          "id": "standard",
+          "label": "Standard",
+          "price": "14",
+          "oldPrice": "",
+          "badge": ""
+        }
+      ],
+      "theme_id": "",
+      "isTemplate": true,
+      "createdAt": "2026-09-19T13:37:40",
+      "updatedAt": "2026-09-19T13:37:40",
+      "bot_id": "seller",
+      "id": "tpl-banner",
+      "name": "Aurora Icon Pack - 480 vector icons",
+      "tagline": "A clean, modern icon set for web and app designers. SVG + PNG + Figma file.",
+      "category": "Design Assets",
+      "currency": "$",
+      "license": "Commercial license",
+      "features": "480 icons in 4 styles (line, solid, duotone, filled)\nSVG + 3 PNG sizes\nFigma and Sketch libraries\nFree monthly icon drops",
+      "bulletStyle": "fire",
+      "bulletCustom": "",
+      "included": "Icon pack (ZIP download)\nFigma file\nCommercial license (PDF)",
+      "requirements": "Figma (free account) or any SVG editor",
+      "refund": "Refunds within 14 days if the files are damaged or not as described.",
+      "preset": "banner"
+    },
+    {
+      "categoryCustom": "",
+      "status": "available",
+      "stock": "25",
+      "delivery": "instant",
+      "deliveryHours": "",
+      "mainImage": {
+        "type": "none",
+        "value": ""
+      },
+      "gallery": [
+        {
+          "type": "none",
+          "value": ""
+        },
+        {
+          "type": "none",
+          "value": ""
+        },
+        {
+          "type": "none",
+          "value": ""
+        },
+        {
+          "type": "none",
+          "value": ""
+        }
+      ],
+      "thumbnail": {
+        "type": "none",
+        "value": ""
+      },
+      "footer": "INDRA BOT SYSTEM | Instant delivery",
+      "showTimestamp": true,
+      "saleEnds": "2026-09-21T13:37",
+      "content": "",
+      "fancyText": false,
+      "fancyStyle": "bold",
+      "ticketLineMode": "global",
+      "ticketLineText": "",
+      "plans": [
+        {
+          "id": "1m",
+          "label": "1 Month Key",
+          "price": "4.99",
+          "oldPrice": "7.99",
+          "badge": "POPULAR"
+        },
+        {
+          "id": "3m",
+          "label": "3 Months Key",
+          "price": "9.99",
+          "oldPrice": "",
+          "badge": ""
+        },
+        {
+          "id": "1y",
+          "label": "1 Year Key",
+          "price": "19.99",
+          "oldPrice": "29.99",
+          "badge": "BEST VALUE"
+        },
+        {
+          "id": "lifetime",
+          "label": "Lifetime Key",
+          "price": "39.99",
+          "oldPrice": "",
+          "badge": ""
+        }
+      ],
+      "theme_id": "",
+      "isTemplate": true,
+      "createdAt": "2026-09-19T13:37:40",
+      "updatedAt": "2026-09-19T13:37:40",
+      "bot_id": "seller",
+      "id": "tpl-flash",
+      "name": "Nitro Games Key Bundle",
+      "tagline": "5 Steam game keys in one bundle - this weekend only.",
+      "category": "Game Key/Account",
+      "currency": "$",
+      "license": "1 key per purchase",
+      "features": "5 x Steam game keys (region-free)\nInstant delivery in your ticket\nGiftable - great as a present",
+      "bulletStyle": "arrow",
+      "bulletCustom": "",
+      "included": "5 x Steam key (sent in your ticket)",
+      "requirements": "A free Steam account",
+      "refund": "Keys are checked before sending. No refunds once a key is revealed.",
+      "preset": "flash"
+    },
+    {
+      "id": "mu83gnwojt72h2",
+      "kind": "product",
+      "name": "INDRA INTERNAL CHEATS",
+      "tagline": "",
+      "category": "custom",
+      "categoryCustom": "INTERNAL PANEL",
+      "status": "available",
+      "currency": "$",
+      "plans": [
+        {
+          "id": "standard",
+          "label": "1 MONTH",
+          "price": "8",
+          "oldPrice": "",
+          "badge": ""
+        },
+        {
+          "id": "plan-mu83m87cpa26cb",
+          "label": "3 MONTHS",
+          "price": "20",
+          "oldPrice": "",
+          "badge": ""
+        },
+        {
+          "id": "plan-mu83m8o890ymsm",
+          "label": "1 YEAR",
+          "price": "45",
+          "oldPrice": "",
+          "badge": ""
+        },
+        {
+          "id": "plan-mu83ma40567p9a",
+          "label": "LIFETIME",
+          "price": "65",
+          "oldPrice": "",
+          "badge": ""
+        }
+      ],
+      "stock": "",
+      "delivery": "hours",
+      "deliveryHours": "1",
+      "license": "INDRA'S CORE",
+      "features": "AIMBOT [ VISIBLE & RAGE ]\nSILENT AIM [ HEAD & BODY ]\nESP MENU\nBRUTAL MENU\nANY MANY MORE...",
+      "bulletStyle": "custom",
+      "bulletCustom": "",
+      "included": "BEST LAG FREE EMULATOR\nLATEST FREE-FIRE V7A",
+      "requirements": "WINDOWS 10 or 11\nLATEST DRIVERS",
+      "refund": "NO REFUNDS — SORRY!\nHowever, you’re guaranteed a **safe experience with NO BAN risk**.\n",
+      "mainImage": {
+        "type": "upload",
+        "value": "ChatGPT_Image_Sep_19_2026_10_20_07_AM_f121270d2b.jpg"
+      },
+      "gallery": [
+        {
+          "type": "none",
+          "value": ""
+        },
+        {
+          "type": "upload",
+          "value": "1_a7fa82b677.png"
+        },
+        {
+          "type": "none",
+          "value": ""
+        },
+        {
+          "type": "none",
+          "value": ""
+        }
+      ],
+      "thumbnail": {
+        "type": "upload",
+        "value": "ab610db07f5cd64f40b65994e8f410a9_f0571f52c4.jpg"
+      },
+      "footer": "BEST CHEATS IN THE MARKET",
+      "showTimestamp": false,
+      "saleEnds": "",
+      "content": "LATEST UPDATE OB55",
+      "preset": "flash",
+      "theme_id": "sunset-flash",
+      "fancyText": true,
+      "fancyStyle": "bold",
+      "ticketLineMode": "show",
+      "ticketLineText": "",
+      "isTemplate": false,
+      "createdAt": "2026-09-19T07:57:05.928Z",
+      "updatedAt": "2026-09-19T13:59:35",
+      "bot_id": "indra-core"
+    }
+  ]
+}

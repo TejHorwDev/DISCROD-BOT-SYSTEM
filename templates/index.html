@@ -1,0 +1,1137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>INDRA BOT SYSTEM</title>
+  <meta name="description" content="INDRA BOT SYSTEM - build beautiful digital product listings and post them to your Discord store channel.">
+  <!-- Little tab icon: a blurple price tag -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%235865F2'/%3E%3Cpath d='M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z' transform='translate(1.2 1.2) scale(0.9)' fill='%23fff'/%3E%3Ccircle cx='7' cy='7' r='1.5' fill='%235865F2' transform='translate(1.2 1.2) scale(0.9)'/%3E%3C/svg%3E">
+  <!-- Inter font (falls back to your system font when offline) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- ======================= TOP BAR ======================= -->
+  <header class="topbar">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 24 24" width="36" height="36" aria-hidden="true">
+        <rect width="24" height="24" rx="6" fill="#5865F2"/>
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z" transform="translate(1.2 1.2) scale(0.9)" fill="#fff"/>
+        <circle cx="7" cy="7" r="1.5" fill="#5865F2" transform="translate(1.2 1.2) scale(0.9)"/>
+      </svg>
+      <div class="brand-text">
+        <h1>INDRA BOT SYSTEM</h1>
+        <span>Digital product listings for Discord</span>
+      </div>
+    </div>
+
+    <!-- Bot switcher: shows the ACTIVE bot (avatar + name + status dot).
+         Click it to open the menu: switch to another bot, re-check
+         connections, or add a brand-new bot. -->
+    <div class="bot-switcher" id="botSwitcher">
+      <button id="botSwitcherBtn" class="bot-switch-btn" type="button"
+              aria-haspopup="true" aria-expanded="false"
+              title="Switch which bot you are working as">
+        <span class="bot-avatar-wrap">
+          <img class="bot-avatar" id="switcherAvatar" alt="" hidden>
+          <span class="bot-avatar-fallback" id="switcherAvatarFallback" aria-hidden="true">IBS</span>
+          <span class="dot" id="switcherDot"></span>
+        </span>
+        <span class="bot-id">
+          <span class="bot-name" id="switcherName">No bot yet</span>
+          <span class="bot-sub" id="switcherSub">starting up...</span>
+        </span>
+        <svg class="chev" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+      </button>
+
+      <!-- The dropdown menu (built by app.js) -->
+      <div class="bot-menu" id="botMenu" hidden>
+        <div class="bot-menu-head">
+          <span>Your bots</span>
+          <button id="botMenuRefresh" class="icon-btn" type="button" title="Re-check every bot's connection">&#10227;</button>
+        </div>
+        <div class="bot-menu-list" id="botMenuList"></div>
+        <button class="bot-menu-add" id="botMenuAdd" type="button">&#43; Add a bot...</button>
+      </div>
+    </div>
+
+    <!-- Admin Account & Sign Out -->
+    <div class="user-nav" id="userNav" style="display: flex; align-items: center; gap: 10px; margin-left: auto;">
+      <div class="user-pill" style="display: flex; align-items: center; gap: 7px; padding: 6px 13px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; font-size: 12.5px; color: #cbd5e1;">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="#5865F2"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        <span id="topbarAdminEmail">admin@indra.gg</span>
+      </div>
+      <a href="/logout" class="btn btn-ghost" style="padding: 6px 12px; font-size: 12.5px; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.1);" title="Sign out of INDRA BOT SYSTEM">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        <span>Sign Out</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ======================= MAIN AREA ======================= -->
+  <main class="container-wide">
+
+    <noscript>
+      <div class="alert alert-error">INDRA BOT SYSTEM needs JavaScript turned on to work. Please enable JavaScript in your browser and reload the page.</div>
+    </noscript>
+
+    <!-- Shown only when the bot is NOT connected (wrong/missing token) -->
+    <div id="connectionError" class="alert alert-error" hidden>
+      <div class="alert-title">Bot not connected</div>
+      <p id="connectionErrorText"></p>
+      <ul class="small muted tight-list">
+        <li>Copy <strong>.env.example</strong> to a file named <strong>.env</strong> (run.bat / run.sh do this for you) and paste your token after <strong>DISCORD_TOKEN=</strong>.</li>
+        <li>The token is only read when the app starts - save <strong>.env</strong> and start INDRA BOT SYSTEM again.</li>
+      </ul>
+      <button id="statusRetry" class="btn btn-ghost" type="button">Check again</button>
+    </div>
+
+    <!-- ================= DESTINATION CARD ================= -->
+    <section class="card">
+      <div class="card-head">
+        <h2>1. Destination</h2>
+        <p>Pick the server and the channel(s) your product listings will be posted to. You can tick several channels, and change this any time.</p>
+      </div>
+
+      <div class="field">
+        <div class="row-between" style="align-items: center; margin-bottom: 6px;">
+          <label for="guildSelect" style="margin-bottom:0">Server</label>
+          <div id="guildLiveStatsBadge" class="tag tag-blurple" style="display:none; font-weight: 600; font-size: 11.5px; padding: 3px 8px; border-radius: 6px;"></div>
+        </div>
+        <div class="row">
+          <select id="guildSelect" disabled>
+            <option>Loading your servers...</option>
+          </select>
+          <button id="refreshGuilds" class="btn" type="button" title="Fetch the server list again">Refresh</button>
+        </div>
+        <!-- Warning shown when the bot was invited without the needed permissions -->
+        <div id="guildWarning" class="alert alert-warn" hidden></div>
+      </div>
+
+      <div class="field">
+        <span class="label" id="channelsLabel">Channels <span class="label-hint">(you can tick more than one)</span></span>
+        <div id="channelGroups" class="channel-groups" role="group" aria-labelledby="channelsLabel"></div>
+        <p id="selectionSummary" class="selection-summary muted">No channels selected yet.</p>
+      </div>
+
+      <!-- Manual fallback: paste a channel ID when it is not in the list -->
+      <details class="manual-box">
+        <summary>Can&rsquo;t see your channel? Add it by ID</summary>
+        <p class="muted small">
+          Works for channels that do not show up in the list. To copy an ID in Discord:
+          User Settings &rarr; Advanced &rarr; turn on <strong>Developer Mode</strong>,
+          then right-click the channel &rarr; <strong>Copy Channel ID</strong>.
+        </p>
+        <div class="row">
+          <input id="manualChannelId" type="text" inputmode="numeric" placeholder="e.g. 1234567890123456789" aria-label="Channel ID">
+          <button id="checkChannelBtn" class="btn" type="button">Check &amp; add</button>
+        </div>
+        <p id="manualFeedback" class="manual-feedback" aria-live="polite"></p>
+        <div id="manualChips" class="chips"></div>
+      </details>
+    </section>
+
+    <!-- ================= TABS ================= -->
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab active" data-tab="builder" role="tab" aria-selected="true" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2 4 5v6c0 5.05 3.41 9.76 8 11 4.59-1.24 8-5.95 8-11V5l-8-3zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-2.63v9.32z"/></svg>
+        Builder
+      </button>
+      <button class="tab" data-tab="library" role="tab" aria-selected="false" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M4 6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6zm10 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2V6z"/></svg>
+        Library <span id="libCount" class="count-badge">0</span>
+      </button>
+      <button class="tab" data-tab="sections" role="tab" aria-selected="false" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM8 11H6V9h2v2zm5 0h-2V9h2v2zm5 0h-2V9h2v2z"/></svg>
+        Sections <span id="sectionsCount" class="count-badge">0</span>
+      </button>
+      <button class="tab" data-tab="stats" role="tab" aria-selected="false" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+        Server Stats
+      </button>
+      <button class="tab" data-tab="vouches" role="tab" aria-selected="false" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="m12 17.27 6.18 3.73-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        Vouches <span id="vouchesCount" class="count-badge">0</span>
+      </button>
+      <button class="tab" data-tab="history" role="tab" aria-selected="false" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M13 3a9 9 0 0 0-9 9H1l4 4 4-4H6a7 7 0 1 1 2.05 4.95l-1.42 1.42A9 9 0 1 0 13 3zm-1 5v5l4.25 2.52.75-1.23-3.5-2.08V8H12z"/></svg>
+        History
+      </button>
+      <button class="tab" data-tab="schedules" role="tab" aria-selected="false" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm4.2 14.2L11 13V7h1.5v5.32l4.5 2.67-.8 1.21z"/></svg>
+        Scheduled <span id="schCount" class="count-badge">0</span>
+      </button>
+      <button class="tab" data-tab="bots" role="tab" aria-selected="false" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.38-1 1.73V7h1a6 6 0 0 1 6 6v1h.5a1.5 1.5 0 0 1 0 3H20v1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1H3.5a1.5 1.5 0 0 1 0-3H4v-1a6 6 0 0 1 6-6h1V5.73A2 2 0 0 1 12 2zM9 12a1.5 1.5 0 1 0 1.5 1.5A1.5 1.5 0 0 0 9 12zm6 0a1.5 1.5 0 1 0 1.5 1.5A1.5 1.5 0 0 0 15 12z"/></svg>
+        Bots <span id="botsCount" class="count-badge">0</span>
+      </button>
+      <button class="tab" data-tab="themes" role="tab" aria-selected="false" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 0 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1-.23-.27-.38-.62-.38-1 0-.83.67-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.42-4.03-8-9-8zm-5.5 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm3-4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm3 4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>
+        Themes
+      </button>
+      <button class="tab" data-tab="settings" role="tab" aria-selected="false" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="m19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.61.22L2.64 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.42.34.61.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.23.09.47 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 15.6 12 3.6 3.6 0 0 1 12 15.6z"/></svg>
+        Settings
+      </button>
+    </nav>
+
+    <!-- ================= TAB: BUILDER ================= -->
+    <div id="tab-builder" class="tab-panel active" role="tabpanel">
+
+      <!-- Orange banner shown while you are editing an already-sent message -->
+      <div id="editBanner" class="alert alert-edit" hidden>
+        <div class="alert-title">✏️ Editing a message that was already sent</div>
+        <p id="editBannerText"></p>
+        <div class="row">
+          <button id="btnUpdateMessage" class="btn btn-warn" type="button">Update the Discord message</button>
+          <button id="btnCancelEdit" class="btn btn-ghost" type="button">Cancel editing</button>
+        </div>
+      </div>
+
+      <div class="builder-grid">
+
+        <!-- ============ LEFT: THE PRODUCT FORM ============ -->
+        <form id="builderForm" class="form-col" autocomplete="off">
+
+          <div class="form-toolbar">
+            <div class="save-row">
+              <input id="f-name" type="text" placeholder="Product name (shown as the embed title)" aria-label="Product name">
+              <button id="btn-save-product" class="btn" type="button" title="Save this product to your library">💾 Save</button>
+              <button id="btn-duplicate-product" class="btn btn-ghost" type="button" title="Save a copy of this product">Duplicate</button>
+              <button id="btn-new-product" class="btn btn-ghost" type="button" title="Start a blank product">New</button>
+            </div>
+          </div>
+
+          <!-- ---------- BASICS ---------- -->
+          <details class="section" open>
+            <summary><span class="sec-n">1</span> Basics</summary>
+            <div class="sec-body">
+              <div class="field">
+                <label for="f-tagline">Tagline <span class="label-hint">(one short sentence under the title)</span></label>
+                <input id="f-tagline" type="text" placeholder="e.g. Your notes, instantly findable. Lifetime license.">
+              </div>
+              <div class="grid-2">
+                <div class="field">
+                  <label for="f-category">Category</label>
+                  <select id="f-category">
+                    <option>Software</option>
+                    <option>Course</option>
+                    <option>Template</option>
+                    <option>E-book</option>
+                    <option>Design Assets</option>
+                    <option>Game Key/Account</option>
+                    <option>Service</option>
+                    <option>Bundle</option>
+                    <option>Other</option>
+                    <option value="custom">✏️ Custom...</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="f-status">Status <span class="label-hint">(changes the embed color)</span></label>
+                  <select id="f-status">
+                    <option value="available">✅ Available</option>
+                    <option value="limited">⚠️ Limited stock</option>
+                    <option value="sold_out">❌ Sold out</option>
+                    <option value="coming_soon">🕓 Coming soon</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field" id="wrap-category-custom" hidden>
+                <label for="f-category-custom">Custom category name</label>
+                <input id="f-category-custom" type="text" placeholder="e.g. Notion Templates">
+              </div>
+            </div>
+          </details>
+
+          <!-- ---------- PRICING PLANS ---------- -->
+          <details class="section" open>
+            <summary><span class="sec-n">2</span> Pricing plans &amp; delivery</summary>
+            <div class="sec-body">
+              <p class="muted small">One product, as many plans as you need - a plan can be a key length, a bundle size, a support tier... Each plan gets its own price and optional strike-through "old" price. A single plan is just a normal price.</p>
+
+              <div id="plansEditor" class="plans-editor"></div>
+
+              <div class="plan-quick-row">
+                <span class="muted small">Quick add:</span>
+                <button type="button" class="chip-btn plan-quick" data-label="1 Month Key">+ 1 Month Key</button>
+                <button type="button" class="chip-btn plan-quick" data-label="3 Months Key">+ 3 Months Key</button>
+                <button type="button" class="chip-btn plan-quick" data-label="6 Months Key">+ 6 Months Key</button>
+                <button type="button" class="chip-btn plan-quick" data-label="1 Year Key">+ 1 Year Key</button>
+                <button type="button" class="chip-btn plan-quick" data-label="Lifetime Key">+ Lifetime Key</button>
+              </div>
+
+              <div class="grid-2" style="margin-top:14px">
+                <div class="field">
+                  <label for="f-plan-layout">Pricing Display Style <span class="label-hint">(how plans look in Discord)</span></label>
+                  <select id="f-plan-layout">
+                    <option value="list">📋 Vertical List (One-by-One)</option>
+                    <option value="stacked">📑 Stacked Full-Width Cards</option>
+                    <option value="grid">🔲 Inline Columns (Grid)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="f-currency">Currency symbol</label>
+                  <input id="f-currency" type="text" maxlength="5" placeholder="$" value="$">
+                </div>
+              </div>
+              <div class="grid-3">
+                <div class="field">
+                  <label for="f-delivery">Delivery Method</label>
+                  <select id="f-delivery">
+                    <option value="instant">⚡ Instant delivery</option>
+                    <option value="manual">🧑‍🔧 Manual delivery</option>
+                    <option value="hours">⏱️ Within X hours</option>
+                  </select>
+                </div>
+                <div class="field" id="wrap-delivery-hours" hidden>
+                  <label for="f-delivery-hours">Within how many hours?</label>
+                  <input id="f-delivery-hours" type="number" min="1" placeholder="24">
+                </div>
+                <div class="field">
+                  <label for="f-stock">Stock count <span class="label-hint">(optional)</span></label>
+                  <input id="f-stock" type="number" min="0" placeholder="50">
+                </div>
+              </div>
+              <div class="grid-2">
+                <div class="field">
+                  <label for="f-license">License type <span class="label-hint">(optional)</span></label>
+                  <input id="f-license" type="text" placeholder="Lifetime / 1 year / Personal use">
+                </div>
+                <div class="field">
+                  <label for="f-saleends">Sale ends <span class="label-hint">(optional, live countdown)</span></label>
+                  <input id="f-saleends" type="datetime-local">
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <!-- ---------- FEATURES & DETAILS ---------- -->
+          <details class="section">
+            <summary><span class="sec-n">3</span> Features &amp; details</summary>
+            <div class="sec-body">
+              <div class="field">
+                <label for="f-features">Features <span class="label-hint">(one per line)</span></label>
+                <textarea id="f-features" rows="6" placeholder="Instant download after purchase&#10;Works on Windows and Mac&#10;Free lifetime updates"></textarea>
+              </div>
+              <div class="grid-2">
+                <div class="field">
+                  <label for="f-bullet">Bullet style</label>
+                  <select id="f-bullet">
+                    <option value="checkmark">✅ Checkmark</option>
+                    <option value="sparkles">✨ Sparkles</option>
+                    <option value="fire">🔥 Fire</option>
+                    <option value="arrow">➡️ Arrow</option>
+                    <option value="bullet">• Simple bullet</option>
+                    <option value="custom">✏️ Custom emoji...</option>
+                  </select>
+                </div>
+                <div class="field" id="wrap-bullet-custom" hidden>
+                  <label for="f-bullet-custom">Custom bullet</label>
+                  <input id="f-bullet-custom" type="text" maxlength="12" placeholder="💎">
+                </div>
+              </div>
+              <div class="field">
+                <label for="f-included">What&rsquo;s included <span class="label-hint">(optional)</span></label>
+                <textarea id="f-included" rows="3" placeholder="Installer file&#10;License key&#10;Setup guide"></textarea>
+              </div>
+              <div class="field">
+                <label for="f-requirements">Requirements <span class="label-hint">(optional)</span></label>
+                <textarea id="f-requirements" rows="2" placeholder="Windows 10+&#10;4 GB RAM"></textarea>
+              </div>
+              <div class="field">
+                <label for="f-refund">Refund / support policy <span class="label-hint">(optional)</span></label>
+                <textarea id="f-refund" rows="2" placeholder="7-day money-back guarantee. Open a ticket for help."></textarea>
+              </div>
+            </div>
+          </details>
+
+          <!-- ---------- IMAGES ---------- -->
+          <details class="section">
+            <summary><span class="sec-n">4</span> Images</summary>
+            <div class="sec-body">
+              <p class="muted small">Every image slot accepts a <strong>web address (URL)</strong> or a <strong>file from your PC</strong> (max 8 MB, PNG/JPG/GIF/WEBP). Uploaded files are sent as attachments, so they always work even if the link would break.</p>
+
+              <div class="img-slot" data-slot="mainImage">
+                <div class="img-slot-head"><strong>Main image</strong> <span class="label-hint">(the big picture at the bottom of the embed)</span></div>
+                <div class="row">
+                  <input class="img-url" type="text" placeholder="https://... image address">
+                  <button class="btn btn-ghost img-lib-btn" type="button" title="Pick one of your uploaded images">📁 Library</button>
+                  <label class="btn btn-ghost img-upload-btn">Upload<input class="img-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden></label>
+                  <button class="btn btn-ghost img-clear" type="button" title="Remove this image">✕</button>
+                </div>
+                <div class="img-thumb-row">
+                  <img class="img-thumb" alt="" hidden>
+                  <span class="img-mode muted small"></span>
+                </div>
+              </div>
+
+              <div class="img-slot" data-slot="thumbnail">
+                <div class="img-slot-head"><strong>Thumbnail</strong> <span class="label-hint">(small picture, top-right corner)</span></div>
+                <div class="row">
+                  <input class="img-url" type="text" placeholder="https://... or upload your logo">
+                  <button class="btn btn-ghost img-lib-btn" type="button" title="Pick one of your uploaded images">📁 Library</button>
+                  <label class="btn btn-ghost img-upload-btn">Upload<input class="img-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden></label>
+                  <button class="btn btn-ghost img-clear" type="button" title="Remove this image">✕</button>
+                </div>
+                <div class="img-thumb-row">
+                  <img class="img-thumb" alt="" hidden>
+                  <span class="img-mode muted small"></span>
+                </div>
+              </div>
+
+              <div class="img-slot" data-slot="gallery">
+                <div class="img-slot-head"><strong>Gallery</strong> <span class="label-hint">(up to 4 extra pictures - shown as a grid)</span></div>
+                <div class="gallery-grid">
+                  <div class="img-slot" data-slot="gallery.0">
+                    <div class="img-slot-head small muted">Gallery image 1</div>
+                    <div class="row">
+                      <input class="img-url" type="text" placeholder="https://...">
+                      <button class="btn btn-ghost img-lib-btn" type="button" title="Pick one of your uploaded images">📁 Library</button>
+                  <label class="btn btn-ghost img-upload-btn">Upload<input class="img-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden></label>
+                      <button class="btn btn-ghost img-clear" type="button">✕</button>
+                    </div>
+                    <div class="img-thumb-row">
+                      <img class="img-thumb" alt="" hidden>
+                      <span class="img-mode muted small"></span>
+                    </div>
+                  </div>
+                  <div class="img-slot" data-slot="gallery.1">
+                    <div class="img-slot-head small muted">Gallery image 2</div>
+                    <div class="row">
+                      <input class="img-url" type="text" placeholder="https://...">
+                      <button class="btn btn-ghost img-lib-btn" type="button" title="Pick one of your uploaded images">📁 Library</button>
+                  <label class="btn btn-ghost img-upload-btn">Upload<input class="img-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden></label>
+                      <button class="btn btn-ghost img-clear" type="button">✕</button>
+                    </div>
+                    <div class="img-thumb-row">
+                      <img class="img-thumb" alt="" hidden>
+                      <span class="img-mode muted small"></span>
+                    </div>
+                  </div>
+                  <div class="img-slot" data-slot="gallery.2">
+                    <div class="img-slot-head small muted">Gallery image 3</div>
+                    <div class="row">
+                      <input class="img-url" type="text" placeholder="https://...">
+                      <button class="btn btn-ghost img-lib-btn" type="button" title="Pick one of your uploaded images">📁 Library</button>
+                  <label class="btn btn-ghost img-upload-btn">Upload<input class="img-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden></label>
+                      <button class="btn btn-ghost img-clear" type="button">✕</button>
+                    </div>
+                    <div class="img-thumb-row">
+                      <img class="img-thumb" alt="" hidden>
+                      <span class="img-mode muted small"></span>
+                    </div>
+                  </div>
+                  <div class="img-slot" data-slot="gallery.3">
+                    <div class="img-slot-head small muted">Gallery image 4</div>
+                    <div class="row">
+                      <input class="img-url" type="text" placeholder="https://...">
+                      <button class="btn btn-ghost img-lib-btn" type="button" title="Pick one of your uploaded images">📁 Library</button>
+                  <label class="btn btn-ghost img-upload-btn">Upload<input class="img-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden></label>
+                      <button class="btn btn-ghost img-clear" type="button">✕</button>
+                    </div>
+                    <div class="img-thumb-row">
+                      <img class="img-thumb" alt="" hidden>
+                      <span class="img-mode muted small"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <!-- ---------- MESSAGE & FOOTER ---------- -->
+          <details class="section">
+            <summary><span class="sec-n">5</span> Message &amp; footer</summary>
+            <div class="sec-body">
+              <div class="field">
+                <label for="f-content">Plain message above the embed <span class="label-hint">(optional, e.g. a role ping)</span></label>
+                <input id="f-content" type="text" placeholder="e.g. @Buyers new product just dropped!">
+                <div class="role-chips-row" id="roleChips"></div>
+              </div>
+              <div class="grid-2">
+                <div class="field">
+                  <label for="f-footer">Footer text</label>
+                  <input id="f-footer" type="text" value="INDRA BOT SYSTEM | Instant delivery">
+                </div>
+                <div class="field checkbox-field">
+                  <label class="check-label"><input id="f-timestamp" type="checkbox" checked> Show timestamp in footer</label>
+                </div>
+              </div>
+              <div class="field checkbox-field" style="margin-top: 8px;">
+                <label class="check-label"><input id="f-ghost-ping" type="checkbox"> 👻 <strong>Ghost Ping</strong> - auto-delete ping 5s after sending (leaves channel clean)</label>
+              </div>
+            </div>
+          </details>
+
+          <!-- ---------- DISCORD BUTTONS (ACTION ROW) ---------- -->
+          <details class="section">
+            <summary><span class="sec-n">6</span> 🎛️ Interactive Discord Buttons (Action Row)</summary>
+            <div class="sec-body">
+              <p class="muted small">Attach up to 5 clickable buttons below your embed (e.g. Buy Now, Open Ticket, Support, Vouches).</p>
+              <div id="builderButtonsList" class="buttons-list"></div>
+              <div class="row" style="gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+                <button id="btnAddBuyBtn" class="btn btn-ghost" type="button">+ 🛒 Buy Now Button</button>
+                <button id="btnAddTicketBtn" class="btn btn-ghost" type="button">+ 🎫 Open Ticket Button</button>
+                <button id="btnAddCustomBtn" class="btn btn-ghost" type="button">+ 🔗 Custom Link Button</button>
+              </div>
+            </div>
+          </details>
+
+          <!-- ---------- LAYOUT & STYLE ---------- -->
+          <details class="section" open>
+            <summary><span class="sec-n">7</span> Layout, theme &amp; style</summary>
+            <div class="sec-body">
+              <div class="grid-2">
+                <div class="field">
+                  <label for="f-theme">Theme <span class="label-hint">(colors + heading letters)</span></label>
+                  <select id="f-theme">
+                    <option value="">✨ Match status color (no theme)</option>
+                  </select>
+                  <p class="muted small">Themes control the embed's colored bar, the look of the title/headings and extra touches like the author line. Browse and create them in the <strong>Themes</strong> tab.</p>
+                </div>
+                <div class="field">
+                  <label for="f-preset-hint">&nbsp;</label>
+                  <div class="theme-hint-box muted small" id="themeHint">The classic look: the bar follows the product's status (green = available, red = sold out).</div>
+                </div>
+              </div>
+
+              <div class="field">
+                <span class="label">Layout preset <span class="label-hint">(one click - the preview updates instantly)</span></span>
+                <div class="preset-grid" role="radiogroup" aria-label="Layout preset">
+                  <label class="preset-card"><input type="radio" name="preset" value="modern">
+                    <span class="preset-name">Modern Card</span>
+                    <span class="preset-desc">Colored status bar, fields in a grid, feature list</span>
+                  </label>
+                  <label class="preset-card"><input type="radio" name="preset" value="minimal">
+                    <span class="preset-name">Minimal</span>
+                    <span class="preset-desc">Everything in the description, no fields</span>
+                  </label>
+                  <label class="preset-card"><input type="radio" name="preset" value="banner">
+                    <span class="preset-name">Big Banner</span>
+                    <span class="preset-desc">Huge price headline at the top</span>
+                  </label>
+                  <label class="preset-card"><input type="radio" name="preset" value="flash">
+                    <span class="preset-name">Flash Sale</span>
+                    <span class="preset-desc">Red accent, discount + countdown in your face</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="check-label"><input id="f-fancy" type="checkbox"> Fancy text <span class="label-hint">(Unicode letters for the title and headings - overrides the theme)</span></label>
+                <div class="grid-2" id="wrap-fancy" hidden>
+                  <div class="field" style="margin:0">
+                    <label for="f-fancy-style">Style <span class="label-hint">(11 available)</span></label>
+                    <select id="f-fancy-style">
+                      <option value="bold">𝐁𝐨𝐥𝐝</option>
+                    </select>
+                  </div>
+                  <div class="fancy-preview" id="fancyPreview"></div>
+                </div>
+                <div class="alert alert-warn small" id="fancyWarning" hidden>
+                  ⚠️ Fancy text looks decorative but can be harder to read, and screen readers
+                  cannot pronounce it. Some customers may find it confusing.
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="f-ticket-mode">&ldquo;Open a ticket&rdquo; line <span class="label-hint">(always the last line of the listing)</span></label>
+                <select id="f-ticket-mode">
+                  <option value="global">Use the global setting (Settings tab)</option>
+                  <option value="show">Show for this product</option>
+                  <option value="hide">Hide for this product</option>
+                </select>
+                <input id="f-ticket-text" type="text" placeholder="Custom text for this product (optional)" hidden>
+                <p class="muted small">Placeholders you can use: <code>{ticket_channel}</code> <code>{product}</code> <code>{price}</code></p>
+              </div>
+            </div>
+          </details>
+        </form>
+
+        <!-- ============ RIGHT: LIVE DISCORD PREVIEW ============ -->
+        <aside class="preview-col" id="previewPane">
+          <div class="preview-card">
+            <div class="preview-toolbar">
+              <span class="preview-title">
+                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17a5 5 0 1 1 5-5 5 5 0 0 1-5 5zm0-8a3 3 0 1 0 3 3 3 3 0 0 0-3-3z"/></svg>
+                Live preview
+              </span>
+              <div class="preview-toggles">
+                <button id="pv-theme" class="icon-btn" type="button" title="Toggle light / dark preview">🌙</button>
+                <button id="pv-compact" class="icon-btn" type="button" title="Toggle compact / cozy spacing">↕</button>
+                <button id="pv-fullscreen" class="icon-btn" type="button" title="Full-screen preview">⛶</button>
+                <button id="pv-close" class="icon-btn" type="button" title="Close preview" hidden>✕</button>
+              </div>
+            </div>
+
+            <!-- The Discord-style chat area -->
+            <div id="previewBody" class="dc-chat" aria-live="polite"></div>
+
+            <!-- Pre-flight: what will happen when you press Send -->
+            <div class="preflight">
+              <div class="pf-dest" id="pfDest">No channels selected yet.</div>
+              <div class="pf-counters" id="pfCounters"></div>
+              <div class="pf-warnings" id="pfWarnings"></div>
+              <!-- Which bot posts this message (defaults to the active bot,
+                   but you can override it here for a single send) -->
+              <div class="pf-send-as" id="pfSendAs">
+                <span class="pf-send-label">Sending as</span>
+                <select id="sendAsBot" aria-label="Which bot posts this message"></select>
+              </div>
+              <div class="send-row">
+                <button id="btn-send" class="btn btn-send" type="button" title="Ctrl+Enter also sends">Send <span class="kbd">Ctrl+↵</span></button>
+                <button id="btn-send-test" class="btn btn-ghost" type="button" title="Post to your test channel first">Send test</button>
+                <button id="btn-copy-json" class="btn btn-ghost" type="button" title="Show the exact JSON that will be sent">Copy JSON</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ================= TAB: LIBRARY ================= -->
+    <div id="tab-library" class="tab-panel" role="tabpanel" hidden>
+      <section class="card">
+        <div class="card-head row-between">
+          <div>
+            <h2>Product library</h2>
+            <p>Everything you saved lives in <code>data/products.json</code> on your PC. The four <span class="tag">template</span> items are ready-made examples - load one and make it yours.</p>
+          </div>
+          <div class="lib-actions">
+            <button id="btn-import" class="btn btn-ghost" type="button">Import JSON</button>
+            <button id="btn-export-all" class="btn btn-ghost" type="button">Export all</button>
+            <input id="file-import" type="file" accept=".json,application/json" hidden>
+          </div>
+        </div>
+        <div id="libGrid" class="lib-grid"></div>
+      </section>
+    </div>
+
+    <!-- ================= TAB: SECTIONS ================= -->
+    <div id="tab-sections" class="tab-panel" role="tabpanel" hidden>
+
+      <!-- Saved sections + the editor below -->
+      <section class="card">
+        <div class="card-head row-between">
+          <div>
+            <h2>Sections <span class="muted small">- your Messenger bot's content</span></h2>
+            <p>Announcements, server rules, update logs - everything that is not a product listing. Pick a bot per section (a Messenger bot feels right), then send it to any channel.</p>
+          </div>
+          <div class="lib-actions">
+            <button id="btn-new-section" class="btn" type="button">&#43; New section</button>
+            <button id="btn-refresh-sections" class="btn btn-ghost" type="button">Refresh</button>
+          </div>
+        </div>
+        <div id="sectionsGrid" class="sections-grid"></div>
+      </section>
+
+      <!-- Orange banner while editing an already-sent section -->
+      <div id="sectionEditBanner" class="alert alert-edit" hidden>
+        <div class="alert-title">✏️ Editing a section that was already sent</div>
+        <p id="sectionEditBannerText"></p>
+        <div class="row">
+          <button id="btn-section-update" class="btn btn-warn" type="button">Update the Discord message</button>
+          <button id="btn-section-cancel-edit" class="btn btn-ghost" type="button">Cancel editing</button>
+        </div>
+      </div>
+
+      <div class="builder-grid">
+        <!-- left: the section form -->
+        <form id="sectionForm" class="form-col" autocomplete="off">
+          <div class="form-toolbar">
+            <div class="save-row">
+              <input id="s-name" type="text" placeholder="Section name (just for you, e.g. Rules v2)" aria-label="Section name">
+              <button id="btn-save-section" class="btn" type="button" title="Save this section">💾 Save</button>
+              <button id="btn-duplicate-section" class="btn btn-ghost" type="button">Duplicate</button>
+              <button id="btn-blank-section" class="btn btn-ghost" type="button">New</button>
+              <button id="btn-delete-section" class="btn btn-danger" type="button">Delete</button>
+            </div>
+          </div>
+
+          <details class="section" open>
+            <summary><span class="sec-n">1</span> Content</summary>
+            <div class="sec-body">
+              <div class="field">
+                <label for="s-title">Title <span class="label-hint">(the embed heading)</span></label>
+                <input id="s-title" type="text" placeholder="e.g. Server Rules">
+              </div>
+              <div class="field">
+                <label for="s-body">Text <span class="label-hint">(Discord markdown works: **bold**, # headings, lists...)</span></label>
+                <textarea id="s-body" rows="10" placeholder="**1.** Be nice.&#10;**2.** No spam."></textarea>
+              </div>
+              <div class="grid-2">
+                <div class="field">
+                  <label for="s-preset">Type</label>
+                  <select id="s-preset">
+                    <option value="clean">🧹 Clean (no icon)</option>
+                    <option value="announcement">📣 Announcement</option>
+                    <option value="rules">📜 Rules</option>
+                    <option value="update">🆕 Update</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="s-theme">Theme</label>
+                  <select id="s-theme">
+                    <option value="">✨ Default (blurple)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <details class="section">
+            <summary><span class="sec-n">2</span> Images &amp; footer</summary>
+            <div class="sec-body">
+              <div class="img-slot" data-slot="image">
+                <div class="img-slot-head"><strong>Image</strong> <span class="label-hint">(the big picture at the bottom)</span></div>
+                <div class="row">
+                  <input class="img-url" type="text" placeholder="https://... or upload">
+                  <button class="btn btn-ghost img-lib-btn" type="button" title="Pick one of your uploaded images">📁 Library</button>
+                  <label class="btn btn-ghost img-upload-btn">Upload<input class="img-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden></label>
+                  <button class="btn btn-ghost img-clear" type="button">✕</button>
+                </div>
+                <div class="img-thumb-row">
+                  <img class="img-thumb" alt="" hidden>
+                  <span class="img-mode muted small"></span>
+                </div>
+              </div>
+
+              <div class="img-slot" data-slot="thumbnail">
+                <div class="img-slot-head"><strong>Thumbnail</strong> <span class="label-hint">(small picture, top-right corner)</span></div>
+                <div class="row">
+                  <input class="img-url" type="text" placeholder="https://... or upload your logo">
+                  <button class="btn btn-ghost img-lib-btn" type="button" title="Pick one of your uploaded images">📁 Library</button>
+                  <label class="btn btn-ghost img-upload-btn">Upload<input class="img-file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden></label>
+                  <button class="btn btn-ghost img-clear" type="button">✕</button>
+                </div>
+                <div class="img-thumb-row">
+                  <img class="img-thumb" alt="" hidden>
+                  <span class="img-mode muted small"></span>
+                </div>
+              </div>
+
+              <div class="grid-2">
+                <div class="field">
+                  <label for="s-footer">Footer text <span class="label-hint">(optional)</span></label>
+                  <input id="s-footer" type="text" placeholder="e.g. Last updated: today">
+                </div>
+                <div class="field checkbox-field">
+                  <label class="check-label"><input id="s-timestamp" type="checkbox" checked> Show timestamp</label>
+                </div>
+              </div>
+              <div class="field">
+                <label for="s-content">Plain message above the embed <span class="label-hint">(optional, e.g. @Everyone - use the Settings switch)</span></label>
+                <input id="s-content" type="text" placeholder="e.g. @Updates new rule drop!">
+              </div>
+            </div>
+          </details>
+        </form>
+
+        <!-- right: preview + send -->
+        <aside class="preview-col" id="sectionPreviewPane">
+          <div class="preview-card">
+            <div class="preview-toolbar">
+              <span class="preview-title">
+                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17a5 5 0 1 1 5-5 5 5 0 0 1-5 5zm0-8a3 3 0 1 0 3 3 3 3 0 0 0-3-3z"/></svg>
+                Section preview
+              </span>
+              <div class="preview-toggles">
+                <button id="spv-theme" class="icon-btn" type="button" title="Toggle light / dark preview">🌙</button>
+              </div>
+            </div>
+            <div id="sectionPreviewBody" class="dc-chat" aria-live="polite"></div>
+            <div class="preflight">
+              <div class="pf-dest" id="secPfDest">No channels selected yet.</div>
+              <div class="pf-counters" id="secPfCounters"></div>
+              <div class="pf-warnings" id="secPfWarnings"></div>
+              <div class="pf-send-as">
+                <span class="pf-send-label">Sending as</span>
+                <select id="sectionSendAsBot" aria-label="Which bot posts this section"></select>
+              </div>
+              <div class="send-row">
+                <button id="btn-send-section" class="btn btn-send" type="button">Send section</button>
+                <button id="btn-send-section-test" class="btn btn-ghost" type="button">Send test</button>
+                <button id="btn-section-json" class="btn btn-ghost" type="button">Copy JSON</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ================= TAB: THEMES ================= -->
+    <div id="tab-themes" class="tab-panel" role="tabpanel" hidden>
+      <section class="card">
+        <div class="card-head row-between">
+          <div>
+            <h2>Theme Studio</h2>
+            <p>A theme is a ready-made look for your embeds: the colored bar, the letter style of the title and headings, an optional author line and footer. Apply one in the Builder or the Sections tab - or create your own.</p>
+          </div>
+          <div class="lib-actions">
+            <button id="btn-new-theme" class="btn" type="button">&#43; New custom theme</button>
+            <button id="btn-refresh-themes" class="btn btn-ghost" type="button">Refresh</button>
+          </div>
+        </div>
+
+        <div class="alert alert-warn small">
+          &#8505;&#65039; Themes never change WHAT a message says - only how it looks. The 12 built-in themes are part of the app
+          and cannot be deleted; duplicate one to make it yours, or build a new one from scratch.
+        </div>
+
+        <div id="themesGrid" class="themes-grid"></div>
+      </section>
+    </div>
+
+    <!-- ================= TAB: HISTORY ================= -->
+    <div id="tab-history" class="tab-panel" role="tabpanel" hidden>
+      <section class="card">
+        <div class="card-head row-between">
+          <div>
+            <h2>Sent messages</h2>
+            <p>Every listing the bot posted, with one-click actions. These buttons edit the <strong>real Discord messages</strong> through the API.</p>
+          </div>
+          <div class="lib-actions">
+            <button id="btn-refresh-history" class="btn btn-ghost" type="button">Refresh</button>
+          </div>
+        </div>
+        <div id="histList" class="hist-list"></div>
+      </section>
+    </div>
+
+    <!-- ================= TAB: SCHEDULES ================= -->
+    <div id="tab-schedules" class="tab-panel" role="tabpanel" hidden>
+      <section class="card">
+        <div class="card-head">
+          <h2>Scheduled posts</h2>
+          <p>Post the product you are currently building at a later date and time.</p>
+        </div>
+
+        <div class="sch-form">
+          <div class="row">
+            <div class="field" style="flex:1">
+              <label for="sch-runat">Date &amp; time</label>
+              <input id="sch-runat" type="datetime-local">
+            </div>
+            <div class="field" style="align-self:end">
+              <button id="sch-create" class="btn" type="button">Schedule this product</button>
+            </div>
+          </div>
+          <div class="alert alert-warn small">
+            ℹ️ INDRA BOT SYSTEM is a local app: it can only post at the scheduled time if it is
+            <strong>running on your PC</strong> at that moment. If it was closed, the schedule
+            is marked <em>missed</em> and you can run it with one click when you open the app again.
+          </div>
+        </div>
+
+        <div id="schList" class="sch-list"></div>
+      </section>
+    </div>
+
+    <!-- ================= TAB: BOTS ================= -->
+    <div id="tab-bots" class="tab-panel" role="tabpanel" hidden>
+      <section class="card">
+        <div class="card-head row-between">
+          <div>
+            <h2>Your bots</h2>
+            <p>Every bot you register here can post from this dashboard. Pick one in the header switcher (top right) to work as that bot, or override it per message in the preview panel.</p>
+          </div>
+          <div class="lib-actions">
+            <button id="btn-add-bot" class="btn" type="button">&#43; Add bot</button>
+            <button id="btn-refresh-bots" class="btn btn-ghost" type="button">Refresh</button>
+          </div>
+        </div>
+
+        <div class="alert alert-warn small">
+          &#8505;&#65039; Bots added here show as <strong>OFFLINE</strong> in your server - that is completely normal.
+          This app uses Discord's REST API only, so a bot only "appears" for the moment a message is being posted.
+          No gateway connection, no slash commands, no always-running loop.
+        </div>
+
+        <div id="botsGrid" class="bots-grid"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>How bots &amp; tokens work here</h2>
+        </div>
+        <ul class="tight-list muted small" style="line-height:1.9">
+          <li><strong>Tokens live only in the .env file</strong> on your PC. They are never saved in data/bots.json, never sent to the browser (the dashboard only ever shows <code>&#8226;&#8226;&#8226;&#8226;last4</code>), and never printed in logs.</li>
+          <li><strong>Adding a bot is safe:</strong> the token is checked against Discord first; if it does not work, nothing is saved.</li>
+          <li><strong>The invite link</strong> is generated automatically with exactly the permissions the app needs: View Channels, Send Messages, Embed Links, Attach Files, Read Message History. Mention Everyone is only included if you tick the box.</li>
+          <li><strong>Disabling a bot</strong> keeps its record but skips it everywhere (sends, schedules, the switcher).</li>
+          <li><strong>Removing a bot</strong> also deletes its token line from .env - except the very first <code>DISCORD_TOKEN</code> line, which is kept untouched for backward compatibility.</li>
+          <li><strong>Each bot has its own rate limits</strong> - the app reads Discord's rate-limit headers per bot and waits exactly as long as Discord asks.</li>
+        </ul>
+      </section>
+    </div>
+
+    <!-- ================= TAB: SETTINGS ================= -->
+    <div id="tab-settings" class="tab-panel" role="tabpanel" hidden>
+      <section class="card">
+        <div class="card-head">
+          <h2>Ticket channel &amp; message</h2>
+          <p>Every listing ends with a line telling customers where to open a ticket. The channel becomes a <strong>clickable mention</strong> in Discord. (INDRA BOT SYSTEM never opens tickets itself - your other bot handles them.)</p>
+        </div>
+
+        <div class="field">
+          <label for="ticket-channel-select">Ticket channel</label>
+          <div class="row">
+            <select id="ticket-channel-select">
+              <option value="">(not set - pick from a server above)</option>
+            </select>
+          </div>
+          <p class="muted small">The list shows the channels of the server you picked in the Destination card at the top.</p>
+        </div>
+
+        <details class="manual-box">
+          <summary>Or add the ticket channel by ID</summary>
+          <p class="muted small">Right-click the channel in Discord &rarr; <strong>Copy Channel ID</strong> (needs Developer Mode).</p>
+          <div class="row">
+            <input id="ticket-manual-id" type="text" inputmode="numeric" placeholder="e.g. 1234567890123456789">
+            <button id="ticket-manual-btn" class="btn" type="button">Check &amp; save</button>
+          </div>
+          <p id="ticket-manual-fb" class="manual-feedback" aria-live="polite"></p>
+        </details>
+
+        <div class="field">
+          <label class="check-label"><input id="set-ticket-enabled" type="checkbox" checked> Show the &ldquo;open a ticket&rdquo; line on every listing</label>
+        </div>
+        <div class="field">
+          <label for="set-ticket-text">Ticket line text</label>
+          <input id="set-ticket-text" type="text" placeholder="🎫 **Want to buy?** Open a ticket in {ticket_channel}">
+          <p class="muted small">Placeholders: <code>{ticket_channel}</code> becomes the channel mention, <code>{product}</code> the product name, <code>{price}</code> the price.</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Mentions &amp; safety</h2>
+        </div>
+        <div class="field">
+          <label class="check-label"><input id="set-everyone" type="checkbox"> Allow <code>@everyone</code> / <code>@here</code> pings <span class="label-hint">(off by default - normal role pings like @Buyers always work)</span></label>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>💾 Full Store Backup &amp; Restore</h2>
+          <p>Download your complete store setup (products, bots, themes, vouches, history) as a single ZIP file, or restore from a backup.</p>
+        </div>
+        <div class="row" style="gap: 12px; flex-wrap: wrap;">
+          <a href="/api/backup/download" class="btn" id="btnDownloadBackup" style="text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+            <span>📥</span> Download Full Backup (.zip)
+          </a>
+          <button id="btnRestoreBackup" class="btn btn-ghost" type="button">📤 Restore Backup (.zip)...</button>
+          <input id="fileRestoreBackup" type="file" accept=".zip" hidden>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>🔒 Admin Account &amp; Web Security</h2>
+          <p>Protect your dashboard when hosted online. Only you can access INDRA BOT SYSTEM with this email and password.</p>
+        </div>
+
+        <form id="adminSecurityForm" onsubmit="return false;">
+          <div class="grid-2">
+            <div class="field">
+              <label for="adminSecEmail">Admin Email</label>
+              <input id="adminSecEmail" type="email" placeholder="admin@indra.gg" required>
+            </div>
+            <div class="field">
+              <label for="adminSecCurrentPwd">Current Password <span class="req">*</span></label>
+              <input id="adminSecCurrentPwd" type="password" placeholder="Enter current password to save changes" required>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-top: 10px;">
+            <div class="field">
+              <label for="adminSecNewPwd">New Password <span class="label-hint">(leave blank to keep current)</span></label>
+              <input id="adminSecNewPwd" type="password" placeholder="Min. 6 characters">
+            </div>
+            <div class="field" style="align-self: flex-end;">
+              <button id="btnSaveAdminSecurity" class="btn" type="button">💾 Update Admin Credentials</button>
+            </div>
+          </div>
+          <div id="adminSecurityFeedback" class="alert small" style="display:none; margin-top:12px;"></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>About this app</h2>
+        </div>
+        <div id="configInfo" class="config-info muted small"></div>
+        <div class="alert alert-warn small">
+          🔐 <strong>Never share your .env file or your bot token.</strong> Anyone with the token
+          can control your bot. If it leaks: Discord Developer Portal &rarr; your app &rarr;
+          Bot &rarr; <strong>Reset Token</strong> - the old one stops working immediately.
+        </div>
+      </section>
+    </div>
+
+    <!-- ================= TAB: SERVER STATS ================= -->
+    <div id="tab-stats" class="tab-panel" role="tabpanel" hidden>
+      <section class="card">
+        <div class="card-head row-between">
+          <div>
+            <h2>📊 Discord Server Statistics &amp; Metrics</h2>
+            <p>Live metrics from your Discord server. View member counts, boosts, roles, and embed live server info cards.</p>
+          </div>
+          <div class="row" style="gap:10px; align-items:center;">
+            <span class="tag tag-green" style="display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:5px 10px;">
+              <span class="dot ok" style="margin:0; width:8px; height:8px; animation: pulse 2s infinite;"></span> Live Auto-Sync Active (10s)
+            </span>
+            <button id="btnRefreshStats" class="btn btn-ghost" type="button">Refresh Metrics</button>
+          </div>
+        </div>
+
+        <div class="stats-grid" id="statsCards">
+          <div class="stat-card">
+            <div class="stat-label">Total Members</div>
+            <div class="stat-val" id="statMembers">--</div>
+            <div class="stat-sub">Community members</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Online Now</div>
+            <div class="stat-val stat-online" id="statOnline">--</div>
+            <div class="stat-sub">Active presences</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Server Boosts</div>
+            <div class="stat-val" id="statBoosts">--</div>
+            <div class="stat-sub" id="statTier">Level --</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Channels &amp; Roles</div>
+            <div class="stat-val" id="statChannelsRoles">-- / --</div>
+            <div class="stat-sub">Channels / Roles</div>
+          </div>
+        </div>
+
+        <div class="server-card-preview-box" id="serverInfoBox" style="margin-top:20px; background:var(--card-2); padding:18px; border-radius:12px; border:1px solid var(--border);">
+          <h3 style="margin-top:0;">Embed Server Stats to a Channel</h3>
+          <p class="muted small">Post a formatted server overview card with live counts to welcome new members or showcase your community.</p>
+          <div class="row" style="gap:12px; margin-top:12px; flex-wrap:wrap;">
+            <select id="statsChannelSelect" style="min-width:240px;">
+              <option value="">Select channel to post stats...</option>
+            </select>
+            <button id="btnPostStatsCard" class="btn" type="button">📢 Post Server Stats Card</button>
+          </div>
+        </div>
+
+        <div class="alert alert-warn small" style="margin-top:20px;">
+          💡 <strong>Dynamic Placeholders:</strong> You can use <code>{member_count}</code>, <code>{online_count}</code>, <code>{boost_count}</code>, and <code>{server_name}</code> anywhere in your product listings, announcements, or rules pages!
+        </div>
+      </section>
+    </div>
+
+    <!-- ================= TAB: VOUCHES ================= -->
+    <div id="tab-vouches" class="tab-panel" role="tabpanel" hidden>
+      <div class="builder-grid">
+        <div class="builder-col">
+          <section class="card">
+            <div class="card-head">
+              <h2>⭐ Customer Review &amp; Vouch Generator</h2>
+              <p>Create aesthetic 5-star review embeds and post them directly to your <code>#vouches</code> or <code>#feedback</code> channel.</p>
+            </div>
+
+            <form id="vouchForm" onsubmit="return false;">
+              <div class="grid-2">
+                <div class="field">
+                  <label for="v-buyer">Buyer / Customer Name <span class="req">*</span></label>
+                  <input id="v-buyer" type="text" placeholder="e.g. JohnDoe#1234 or @John" required>
+                </div>
+                <div class="field">
+                  <label for="v-product">Product Purchased</label>
+                  <input id="v-product" type="text" placeholder="e.g. 1 Month Key / NovaNotes">
+                </div>
+              </div>
+
+              <div class="grid-2">
+                <div class="field">
+                  <label for="v-rating">Rating</label>
+                  <select id="v-rating">
+                    <option value="5">⭐⭐⭐⭐⭐ (5 / 5 Stars)</option>
+                    <option value="4">⭐⭐⭐⭐ (4 / 5 Stars)</option>
+                    <option value="3">⭐⭐⭐ (3 / 5 Stars)</option>
+                    <option value="2">⭐⭐ (2 / 5 Stars)</option>
+                    <option value="1">⭐ (1 / 5 Stars)</option>
+                  </select>
+                </div>
+                <div class="field checkbox-field" style="align-self:end;">
+                  <label class="check-label"><input id="v-verified" type="checkbox" checked> Verified Buyer Badge ✅</label>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="v-review">Customer Feedback / Review <span class="req">*</span></label>
+                <textarea id="v-review" rows="3" placeholder="e.g. Instant delivery, seller responded immediately and product works 100%! Vouch!" required></textarea>
+              </div>
+
+              <div class="field">
+                <label for="v-image">Proof Screenshot URL <span class="label-hint">(optional image link)</span></label>
+                <input id="v-image" type="url" placeholder="https://i.imgur.com/... or upload URL">
+              </div>
+
+              <div class="field">
+                <label for="v-channel">Destination Channel <span class="req">*</span></label>
+                <select id="v-channel">
+                  <option value="">Select #vouches or #reviews channel...</option>
+                </select>
+              </div>
+
+              <div class="row" style="gap:10px; margin-top:16px;">
+                <button id="btnPostVouch" class="btn btn-send" type="button">📢 Post Vouch to Discord</button>
+                <button id="btnSaveVouchDraft" class="btn btn-ghost" type="button">💾 Save to List</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="card" style="margin-top:20px;">
+            <div class="card-head">
+              <h2>Recent Saved Vouches</h2>
+            </div>
+            <div id="vouchesList" class="sch-list"></div>
+          </section>
+        </div>
+
+        <!-- Right: Vouch Preview -->
+        <aside class="preview-col">
+          <div class="preview-card">
+            <div class="preview-toolbar">
+              <span class="preview-title">👁️ Live Vouch Preview</span>
+            </div>
+            <div id="vouchPreviewBody" class="dc-chat" style="padding:16px;"></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Mobile floating Preview button -->
+  <button id="fabPreview" class="fab" type="button" aria-label="Open preview">👁 Preview</button>
+
+  <footer class="footer">
+    <span>INDRA BOT SYSTEM runs 100% on your PC &middot; your bot token never leaves this machine &middot; tickets are handled by your other bot</span>
+  </footer>
+
+  <!-- Generic modal (Copy JSON, change price, send to another channel...) -->
+  <div id="modalBack" class="modal-back" hidden>
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3 id="modalTitle"></h3>
+        <button id="modalClose" class="icon-btn" type="button" title="Close">✕</button>
+      </div>
+      <div id="modalBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

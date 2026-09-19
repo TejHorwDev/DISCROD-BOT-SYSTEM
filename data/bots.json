@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "bots": [
+    {
+      "id": "indra-core",
+      "display_name": "</> INDRA CORE",
+      "kind": "seller",
+      "token_env_var": "BOT_INDRA_CORE_TOKEN",
+      "application_id": "1550742954187161670",
+      "avatar_url": "https://cdn.discordapp.com/avatars/1550742954187161670/478b9834dd9dbb9d8878f8acd40940bf.png?size=64",
+      "enabled": true,
+      "allow_everyone": false,
+      "notes": "",
+      "created_at": "2026-09-19T13:42:27"
+    },
+    {
+      "id": "indra-core-messenger",
+      "display_name": "</> INDRA CORE MESSENGER",
+      "kind": "messenger",
+      "token_env_var": "BOT_INDRA_CORE_MESSENGER_TOKEN",
+      "application_id": "1550742954187161670",
+      "avatar_url": "https://cdn.discordapp.com/avatars/1550742954187161670/478b9834dd9dbb9d8878f8acd40940bf.png?size=64",
+      "enabled": true,
+      "allow_everyone": false,
+      "notes": "",
+      "created_at": "2026-09-19T13:43:55"
+    },
+    {
+      "id": "indra-core-custom",
+      "display_name": "</> INDRA CORE CUSTOM",
+      "kind": "custom",
+      "token_env_var": "BOT_INDRA_CORE_CUSTOM_TOKEN",
+      "application_id": "1550742954187161670",
+      "avatar_url": "https://cdn.discordapp.com/avatars/1550742954187161670/478b9834dd9dbb9d8878f8acd40940bf.png?size=64",
+      "enabled": true,
+      "allow_everyone": false,
+      "notes": "",
+      "created_at": "2026-09-19T13:44:23"
+    }
+  ]
+}

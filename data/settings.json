@@ -1,0 +1,13 @@
+{
+  "last_guild_id": "1550725231302410291",
+  "last_channel_ids": [
+    "1550734801969881189"
+  ],
+  "active_bot_id": "indra-core",
+  "ticket_channel_id": "1550782452052660234",
+  "ticket_channel_name": "🎟️ᴛɪᴄᴋᴇᴛ",
+  "ticket_line_enabled": true,
+  "ticket_line_text": "🎫 **Want to buy?** Open a ticket in {ticket_channel}",
+  "allow_everyone_mentions": false,
+  "schema_version": 2
+}

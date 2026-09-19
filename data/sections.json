@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "items": [
+    {
+      "body": "This channel is where we post every important announcement - drops, sales, events and changes.\n\nTurn on notifications for this channel so you never miss one.",
+      "bot_id": "",
+      "content": "",
+      "createdAt": "2026-09-19T13:37:40",
+      "footer": "Server announcements",
+      "gallery": [],
+      "id": "sec-announcements",
+      "image": {
+        "type": "upload",
+        "value": "download_a42e58b693.jpg"
+      },
+      "kind": "section",
+      "name": "Announcements",
+      "preset": "clean",
+      "showTimestamp": false,
+      "starter": true,
+      "theme_id": "sunset-flash",
+      "thumbnail": {
+        "type": "upload",
+        "value": "ab610db07f5cd64f40b65994e8f410a9_039fb4e5b8.jpg"
+      },
+      "ticketLineMode": "hide",
+      "ticketLineText": "",
+      "title": "📢 **Welcome to the server!**",
+      "updatedAt": "2026-09-19T14:32:27"
+    },
+    {
+      "body": "**1.** Be respectful to everyone.\n**2.** No spam, no advertising, and no DM advertising.\n**3.** Keep conversations in the right channels.\n**4.** No illegal, NSFW, or inappropriate content.\n**5.** No harassment, bullying, racism, or discrimination.\n**6.** No doxxing, threats, or sharing anyone's private information.\n**7.** No excessive pinging, mass mentions, or unnecessary notifications.\n**8.** No impersonating staff, members, or other people.\n**9.** No drama, toxicity, or unnecessary arguments.\n**10.** Do not exploit bugs, loopholes, or vulnerabilities.\n**11.** Follow Discord's Terms of Service and Community Guidelines.\n**12.** Respect staff decisions and follow their instructions.\n**13.** Keep your profile, username, and content appropriate.\n**14.** Use common sense and treat everyone fairly.\n**15.** Breaking the rules may result in a warning, mute, kick, or ban.",
+      "bot_id": "",
+      "content": "",
+      "createdAt": "2026-09-19T13:37:40",
+      "footer": "Last updated: 19 Sep 2026",
+      "gallery": [],
+      "id": "sec-rules",
+      "image": {
+        "type": "upload",
+        "value": "ChatGPT_Image_Sep_19_2026_02_35_52_PM_b592ab76ca.jpg"
+      },
+      "kind": "section",
+      "name": "Server Rules",
+      "preset": "rules",
+      "showTimestamp": false,
+      "starter": true,
+      "theme_id": "sunset-flash",
+      "thumbnail": {
+        "type": "upload",
+        "value": "ab610db07f5cd64f40b65994e8f410a9_039fb4e5b8.jpg"
+      },
+      "ticketLineMode": "hide",
+      "ticketLineText": "",
+      "title": "**Server Rules**",
+      "updatedAt": "2026-09-19T14:36:02"
+    },
+    {
+      "kind": "section",
+      "title": "Latest Updates",
+      "body": "🆕 **v2.0** - The store got a big upgrade: pricing plans, themes and more.\n\n🆕 **v1.5** - Faster delivery and a fresh look for every listing.",
+      "image": {
+        "type": "none",
+        "value": ""
+      },
+      "thumbnail": {
+        "type": "none",
+        "value": ""
+      },
+      "gallery": [],
+      "footer": "We ship improvements every week",
+      "showTimestamp": true,
+      "content": "",
+      "ticketLineMode": "hide",
+      "ticketLineText": "",
+      "theme_id": "",
+      "starter": true,
+      "createdAt": "2026-09-19T13:37:40",
+      "updatedAt": "2026-09-19T13:37:40",
+      "id": "sec-updates",
+      "name": "Updates Log",
+      "preset": "update",
+      "bot_id": ""
+    }
+  ]
+}

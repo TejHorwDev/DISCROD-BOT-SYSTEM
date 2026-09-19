@@ -1,0 +1,8 @@
+# SELLER BOT - the small list of Python packages the app needs.
+# These are installed automatically the first time you run
+# run.bat (Windows) or run.sh (Mac/Linux).
+
+flask>=3.0              # the tiny web server that shows the dashboard
+requests>=2.31          # talks to Discord's REST API
+python-dotenv>=1.0      # reads your .env file (keeps bot tokens on YOUR PC only)
+pillow>=10.0            # checks, measures and smartly shrinks uploaded images/GIFs

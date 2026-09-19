@@ -1,0 +1,22 @@
+# Python virtual environment & cache
+.venv/
+env/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# CRITICAL SECURITY: Never commit secrets or bot tokens
+.env
+data/admin.json
+data/secret.key
+
+# Deploy / temporary archives
+deploy.zip
+*.zip
+*.tmp
+*.lock
+
+# Uploads cache (optional, keep data/ empty or template)
+data/uploads/*
+!data/uploads/.gitkeep
