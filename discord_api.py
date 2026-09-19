@@ -102,14 +102,17 @@ class DiscordAPIError(Exception):
         self.bot = bot
 
 
-def _friendly(status, raw, bot_name="the bot"):
+def _friendly(status, raw, bot_name="the bot", token=""):
     """Translate a Discord error number into something you can act on."""
     if status == 401:
-        return (f"The bot token of {bot_name} does not work. Open the .env "
-                "file in the seller-bot folder and paste a fresh token "
-                "(Discord Developer Portal > your app > Bot > Reset Token), "
-                "save the file, and start SELLER BOT again. Or remove the "
-                "bot on the Bots page and add it again with the new token.")
+        clean_tok = str(token or "").strip()
+        if clean_tok and "." not in clean_tok:
+            return (f"The token entered for {bot_name} is missing dots (it does not look like a Discord Bot Token). "
+                    "You might have copied the Client Secret or Public Key from General Information! "
+                    "To get your Bot Token: Go to Discord Developer Portal > your App > click 'Bot' on the left menu > click 'Reset Token' and copy the token.")
+        return (f"Discord rejected the token for {bot_name} (401 Unauthorized). "
+                "Make sure you copied the token from Discord Developer Portal (https://discord.com/developers/applications) "
+                "> your App > click 'Bot' on the left menu > click 'Reset Token' > copy and paste that newly generated token.")
     if status == 403:
         return (f"{bot_name} is missing permissions in that place. It needs: "
                 "View Channel, Send Messages, Embed Links, Attach Files "
@@ -259,7 +262,10 @@ class BotClient:
 
     def __init__(self, bot_id, token, display_name=""):
         self.bot_id = bot_id
-        self.token = (token or "").strip()
+        token = (token or "").strip().strip('"').strip("'")
+        if token.lower().startswith("bot "):
+            token = token[4:].strip()
+        self.token = token
         self.display_name = display_name or bot_id
         self._lock = threading.RLock()          # one request at a time
         self._bucket_reset = {}                 # rate-limit bucket -> reset time
@@ -390,7 +396,7 @@ class BotClient:
             raise DiscordAPIError(
                 response.status_code,
                 raw,
-                _friendly(response.status_code, raw, self.display_name),
+                _friendly(response.status_code, raw, self.display_name, token=self.token),
                 _kind(response.status_code),
                 self.display_name,
             )

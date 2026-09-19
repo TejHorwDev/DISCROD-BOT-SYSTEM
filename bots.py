@@ -317,9 +317,16 @@ def add_bot(display_name, kind, token, allow_everyone=False, notes="", base_dir=
     Raises discord_api.DiscordAPIError when the token check fails.
     """
     display_name = str(display_name or "").strip()[:60] or "New bot"
+    token = str(token or "").strip().strip('"').strip("'")
+    if token.lower().startswith("bot "):
+        token = token[4:].strip()
+
+    # Auto-detect webhook URL if user pasted a webhook
+    if token.startswith("https://discord.com/api/webhooks/") or token.startswith("https://discordapp.com/api/webhooks/"):
+        kind = "webhook"
+
     if kind not in KINDS:
         kind = "custom"
-    token = str(token or "").strip()
     if not token:
         raise discord_api.DiscordAPIError(
             0, "empty token",

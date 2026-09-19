@@ -290,7 +290,8 @@ function selectedBotId() {
 
 /* The server ID currently selected across the dashboard. */
 function selectedGuildId() {
-  return state.guildId || $("#guildSelect")?.value || state.settings.last_guild_id || "";
+  const id = state.guildId || $("#guildSelect")?.value || state.settings.last_guild_id || "";
+  return /^\d{17,21}$/.test(id) ? id : "";
 }
 
 function updateGuildStatsBadge() {
@@ -3046,12 +3047,11 @@ async function removeBot(bot) {
 
 function openAddBotWizard() {
   openModal("Add a bot", `
-    <p class="muted small">The token is checked against Discord first, then saved into your
-    .env file on this PC. It is <strong>never</strong> stored in the dashboard's data files,
-    never shown again, and never sent to any server other than Discord's.</p>
+    <p class="muted small">The token is checked against Discord first, then saved securely.
+    It is <strong>never</strong> stored in public files, never shown again, and never sent to any server other than Discord's.</p>
     <div class="field">
       <label for="wizardName">Bot name <span class="label-hint">(shown in the dashboard)</span></label>
-      <input id="wizardName" type="text" maxlength="60" placeholder="e.g. Messenger Bot">
+      <input id="wizardName" type="text" maxlength="60" placeholder="e.g. My Server Bot">
     </div>
     <div class="field">
       <label for="wizardKind">What will it do?</label>
@@ -3059,11 +3059,15 @@ function openAddBotWizard() {
         <option value="seller">\u{1F6CD}\uFE0F Seller - posts product listings</option>
         <option value="messenger">\u{1F4E3} Messenger - announcements, rules, updates</option>
         <option value="custom">\u{1F9E9} Custom - everything else</option>
+        <option value="webhook">\u{1F517} Webhook - Discord Webhook URL</option>
       </select>
     </div>
     <div class="field">
-      <label for="wizardToken">Bot token <span class="label-hint">(Developer Portal &gt; your app &gt; Bot &gt; Reset Token)</span></label>
-      <input id="wizardToken" type="password" autocomplete="off" placeholder="Paste the token here">
+      <label for="wizardToken">Bot token or Webhook URL <span class="label-hint">(Developer Portal &gt; your app &gt; Bot &gt; Reset Token)</span></label>
+      <input id="wizardToken" type="password" autocomplete="off" placeholder="Paste bot token or webhook URL here">
+      <p class="muted small" style="margin-top: 6px; font-size: 11.5px; line-height: 1.5;">
+        &#128273; <strong>Where to get your bot token:</strong> Open <a href="https://discord.com/developers/applications" target="_blank" style="color: #5865F2; text-decoration: underline;">Discord Developer Portal</a> &rarr; click your Application &rarr; click <strong>Bot</strong> tab on the left menu &rarr; click <strong>Reset Token</strong> &rarr; copy that token. <em>(Note: Do not copy the Client Secret or Public Key from General Information)</em>.
+      </p>
     </div>
     <div class="field">
       <label class="check-label"><input id="wizardEveryone" type="checkbox">
@@ -3084,16 +3088,27 @@ function openAddBotWizard() {
 
 async function submitAddBotWizard() {
   const name = $("#wizardName").value.trim();
-  const kind = $("#wizardKind").value;
-  const token = $("#wizardToken").value.trim();
+  let kind = $("#wizardKind").value;
+  let token = $("#wizardToken").value.trim();
   const allowEveryone = $("#wizardEveryone").checked;
 
   if (!name) { showToast("Give the bot a name first.", "error"); $("#wizardName").focus(); return; }
   if (!token) { showToast("Paste the bot token first.", "error"); $("#wizardToken").focus(); return; }
 
+  // Clean token
+  token = token.replace(/^["']|["']$/g, "").trim();
+  if (token.toLowerCase().startsWith("bot ")) {
+    token = token.substring(4).trim();
+  }
+
+  // Auto-detect webhook URL
+  if (token.startsWith("https://discord.com/api/webhooks/") || token.startsWith("https://discordapp.com/api/webhooks/")) {
+    kind = "webhook";
+  }
+
   const button = $("#wizardAddBtn");
   button.disabled = true;
-  button.textContent = "Checking the token with Discord...";
+  button.textContent = "Checking with Discord...";
 
   const data = await apiSend("/api/bots", {
     display_name: name, kind, token, allow_everyone: allowEveryone,
