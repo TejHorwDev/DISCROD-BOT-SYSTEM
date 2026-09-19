@@ -3668,11 +3668,16 @@ def _local_ip_hint():
 
 
 if __name__ == "__main__":
-    # ALLOW_LAN=true in .env opens the app to other devices on your Wi-Fi.
-    # Default (false) keeps it private to this PC - the safe choice.
-    allow_lan = os.getenv("ALLOW_LAN", "").strip().lower() in ("1", "true", "yes", "on")
-    port = int(os.getenv("PORT", "5000"))
-    host = "0.0.0.0" if allow_lan else "127.0.0.1"
+    # Auto-detect Pterodactyl (SERVER_PORT), standard hosting (PORT), or default to 12635 / 5000.
+    raw_port = os.getenv("SERVER_PORT") or os.getenv("PORT") or "12635"
+    try:
+        port = int(raw_port)
+    except (TypeError, ValueError):
+        port = 12635
+
+    # On hosting platforms (Pterodactyl / Docker / Cloud VPS), the server MUST bind
+    # to 0.0.0.0 to accept traffic from assigned container ports and reverse proxies.
+    host = os.getenv("HOST", "0.0.0.0")
 
     print()
     print("  ==================================================")
@@ -3681,18 +3686,8 @@ if __name__ == "__main__":
     print()
     print(bots.startup_report())
     print()
-    print("   Open this address in your browser:")
-    print(f"       http://localhost:{port}")
-    print()
-    if allow_lan:
-        print("   ALLOW_LAN is ON - other devices on your Wi-Fi can open")
-        print("   the app too, for example from your phone:")
-        print(f"       http://{_local_ip_hint()}:{port}")
-        print("   (Turn this OFF in .env when you do not need it.)")
-    else:
-        print("   Only this PC can open the app (the safe default).")
-        print("   To use it from your phone on the same Wi-Fi, set")
-        print("   ALLOW_LAN=true in the .env file and restart.")
+    print(f"   Listening on: http://{host}:{port}")
+    print(f"   Local Access: http://localhost:{port}")
     print()
     print("   Bots show as OFFLINE in Discord - that is normal for a")
     print("   REST-only tool. They 'appear' only for the moment a")
@@ -3704,5 +3699,4 @@ if __name__ == "__main__":
     print()
 
     start_scheduler()   # the background worker for scheduled posts
-    # debug=False keeps things simple and predictable (no auto-reloader).
     app.run(host=host, port=port, debug=False)
