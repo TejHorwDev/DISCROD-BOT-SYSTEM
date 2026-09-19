@@ -2056,6 +2056,7 @@ function switchTab(name) {
   if (name === "themes") { loadThemes(); }
   if (name === "stats") { loadServerStats(); }
   if (name === "vouches") { loadVouches(); }
+  if (name === "links") { loadSavedLinks(); syncLinkSenderChannels(); }
   if (name === "schedules") { loadSchedules(); clearInterval(schTimer); schTimer = setInterval(loadSchedules, 15000); }
   else if (schTimer) { clearInterval(schTimer); schTimer = null; }
 
@@ -4175,6 +4176,398 @@ function bindBackupRestore() {
       fileInput.value = "";
     }
   });
+/* ==========================================================================
+   PART 24 - Link Sender & Directory Hub
+   ========================================================================== */
+
+let currentLinksData = [
+  { emoji: "🌐", label: "Official Website", url: "https://indra.gg", description: "Explore features, documentation & guides", button: true },
+  { emoji: "🛒", label: "Digital Store", url: "https://indra.gg/shop", description: "Instant delivery keys, products & subscriptions", button: true },
+  { emoji: "💬", label: "Discord Community", url: "https://discord.gg/indra", description: "Join our community & customer chat", button: true },
+  { emoji: "⭐", label: "Customer Vouches", url: "https://indra.gg/vouches", description: "Read verified customer reviews & feedback", button: true }
+];
+
+function renderLinkItemRows() {
+  const container = $("#linksItemsContainer");
+  if (!container) return;
+  container.innerHTML = "";
+
+  currentLinksData.forEach((item, index) => {
+    const row = el("div", "card", "");
+    row.style.background = "var(--card-2)";
+    row.style.padding = "12px 14px";
+    row.style.borderRadius = "10px";
+    row.style.border = "1px solid var(--border)";
+    row.style.marginBottom = "0";
+
+    row.innerHTML = `
+      <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
+        <input type="text" class="link-emoji-input" data-index="${index}" value="${item.emoji || '🔗'}" style="width:48px; text-align:center; font-size:16px; padding:6px;" title="Emoji / Icon">
+        <input type="text" class="link-label-input" data-index="${index}" value="${item.label || ''}" placeholder="Link Label (e.g. Website, Store)" style="flex:1; padding:6px 10px;" required>
+        <button type="button" class="icon-btn btn-del-link" data-index="${index}" title="Remove this link" style="color:#f04747;">✕</button>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
+        <input type="url" class="link-url-input" data-index="${index}" value="${item.url || ''}" placeholder="https://..." style="flex:1; padding:6px 10px;" required>
+        <label class="check-label" style="font-size:12px; white-space:nowrap; margin-bottom:0;">
+          <input type="checkbox" class="link-btn-check" data-index="${index}" ${item.button ? 'checked' : ''}> Button
+        </label>
+      </div>
+      <div>
+        <input type="text" class="link-desc-input" data-index="${index}" value="${item.description || ''}" placeholder="Short description or subtext (optional)" style="width:100%; padding:5px 10px; font-size:12.5px; color:var(--text-muted);">
+      </div>
+    `;
+
+    container.appendChild(row);
+  });
+
+  container.querySelectorAll(".link-emoji-input").forEach(inp => {
+    inp.addEventListener("input", (e) => {
+      const idx = parseInt(e.target.dataset.index, 10);
+      currentLinksData[idx].emoji = e.target.value;
+      updateLinkHubPreview();
+    });
+  });
+  container.querySelectorAll(".link-label-input").forEach(inp => {
+    inp.addEventListener("input", (e) => {
+      const idx = parseInt(e.target.dataset.index, 10);
+      currentLinksData[idx].label = e.target.value;
+      updateLinkHubPreview();
+    });
+  });
+  container.querySelectorAll(".link-url-input").forEach(inp => {
+    inp.addEventListener("input", (e) => {
+      const idx = parseInt(e.target.dataset.index, 10);
+      currentLinksData[idx].url = e.target.value;
+      updateLinkHubPreview();
+    });
+  });
+  container.querySelectorAll(".link-desc-input").forEach(inp => {
+    inp.addEventListener("input", (e) => {
+      const idx = parseInt(e.target.dataset.index, 10);
+      currentLinksData[idx].description = e.target.value;
+      updateLinkHubPreview();
+    });
+  });
+  container.querySelectorAll(".link-btn-check").forEach(chk => {
+    chk.addEventListener("change", (e) => {
+      const idx = parseInt(e.target.dataset.index, 10);
+      currentLinksData[idx].button = e.target.checked;
+      updateLinkHubPreview();
+    });
+  });
+  container.querySelectorAll(".btn-del-link").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const idx = parseInt(e.target.dataset.index, 10);
+      currentLinksData.splice(idx, 1);
+      renderLinkItemRows();
+      updateLinkHubPreview();
+    });
+  });
+}
+
+function updateLinkHubPreview() {
+  const previewBox = $("#linkPreviewBody");
+  if (!previewBox) return;
+
+  const title = $("#link-hub-title")?.value.trim() || "🌐 Official Links";
+  const desc = $("#link-hub-desc")?.value.trim() || "";
+  const color = $("#link-hub-color")?.value || "#5865F2";
+  const thumb = $("#link-hub-thumb")?.value.trim();
+  const banner = $("#link-hub-banner")?.value.trim();
+  const renderBtns = $("#link-hub-render-buttons")?.checked;
+
+  let linksHtml = "";
+  let buttonsHtml = "";
+
+  currentLinksData.forEach(l => {
+    if (!l.url && !l.label) return;
+    const emoji = l.emoji ? l.emoji + " " : "";
+    const label = l.label || "Link";
+    const sub = l.description ? `<div style="font-size:12px; color:#9ca3af; margin-top:2px; padding-left:18px;">${escapeHtml(l.description)}</div>` : "";
+    linksHtml += `
+      <div style="margin-bottom:8px;">
+        <a href="${escapeHtml(l.url)}" target="_blank" style="color:#00a8fc; text-decoration:none; font-weight:600;">${emoji}${escapeHtml(label)}</a>
+        ${sub}
+      </div>
+    `;
+
+    if (renderBtns && l.button && l.url) {
+      buttonsHtml += `
+        <a href="${escapeHtml(l.url)}" target="_blank" style="display:inline-flex; align-items:center; gap:6px; background:#4f545c; color:#fff; padding:7px 14px; border-radius:4px; font-size:13px; font-weight:500; text-decoration:none; transition:background 0.2s;">
+          <span>${emoji}</span><span>${escapeHtml(label)}</span>
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        </a>
+      `;
+    }
+  });
+
+  previewBox.innerHTML = `
+    <div style="background:#2f3136; border-left:4px solid ${color}; border-radius:4px; padding:14px 16px; margin-bottom:10px; max-width:520px; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+      <div style="display:flex; justify-content:space-between; gap:12px;">
+        <div style="flex:1;">
+          <div style="font-weight:700; font-size:15.5px; color:#fff; margin-bottom:6px;">${escapeHtml(title)}</div>
+          ${desc ? `<div style="font-size:13px; color:#dcddde; line-height:1.45; margin-bottom:12px; white-space:pre-wrap;">${escapeHtml(desc)}</div>` : ""}
+          <div style="margin-top:8px;">${linksHtml}</div>
+        </div>
+        ${thumb ? `<img src="${escapeHtml(thumb)}" style="width:64px; height:64px; border-radius:8px; object-fit:cover;">` : ""}
+      </div>
+      ${banner ? `<img src="${escapeHtml(banner)}" style="width:100%; border-radius:6px; margin-top:10px; max-height:220px; object-fit:cover;">` : ""}
+      <div style="font-size:11px; color:#72767d; margin-top:10px;">INDRA BOT SYSTEM • Official Links & Directory</div>
+    </div>
+    ${buttonsHtml ? `<div style="display:flex; flex-wrap:wrap; gap:8px; max-width:520px;">${buttonsHtml}</div>` : ""}
+  `;
+}
+
+async function loadSavedLinks() {
+  const res = await apiGet("/api/links");
+  const listEl = $("#savedLinksList");
+  const badge = $("#linksCount");
+  if (!res.ok || !res.links) return;
+
+  if (badge) badge.textContent = res.links.length;
+  if (!listEl) return;
+
+  if (res.links.length === 0) {
+    listEl.innerHTML = `<div class="muted small" style="padding:12px;">No saved link presets yet.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = "";
+  res.links.forEach(bundle => {
+    const item = el("div", "sch-item", "");
+    item.innerHTML = `
+      <div class="sch-main">
+        <div class="sch-title" style="font-weight:600; color:#fff;">${escapeHtml(bundle.name || bundle.title)}</div>
+        <div class="sch-sub muted small">${bundle.links ? bundle.links.length : 0} links &bull; ${escapeHtml(bundle.title)}</div>
+      </div>
+      <div class="sch-actions" style="display:flex; gap:6px;">
+        <button class="btn btn-ghost btn-sm btn-load-link" type="button">Load</button>
+        <button class="btn btn-ghost btn-sm btn-del-link-bundle" type="button" style="color:#f04747;">Delete</button>
+      </div>
+    `;
+
+    item.querySelector(".btn-load-link").addEventListener("click", () => {
+      $("#link-hub-name").value = bundle.name || "";
+      $("#link-hub-title").value = bundle.title || "";
+      $("#link-hub-desc").value = bundle.description || "";
+      $("#link-hub-color").value = bundle.color || "#5865F2";
+      $("#link-hub-thumb").value = bundle.thumbnail_url || "";
+      $("#link-hub-banner").value = bundle.banner_url || "";
+      $("#link-hub-render-buttons").checked = bundle.render_buttons !== false;
+      currentLinksData = Array.isArray(bundle.links) ? JSON.parse(JSON.stringify(bundle.links)) : [];
+      renderLinkItemRows();
+      updateLinkHubPreview();
+      showToast(`Loaded preset "${bundle.name || bundle.title}".`, "info");
+    });
+
+    item.querySelector(".btn-del-link-bundle").addEventListener("click", async () => {
+      if (!confirm(`Delete preset "${bundle.name || bundle.title}"?`)) return;
+      const del = await apiSend(`/api/links/${bundle.id}`, {}, "DELETE");
+      if (del.ok) {
+        showToast("Preset deleted.", "success");
+        loadSavedLinks();
+      } else {
+        showToast(del.error || "Failed to delete preset.", "error");
+      }
+    });
+
+    listEl.appendChild(item);
+  });
+}
+
+function syncLinkSenderChannels() {
+  const chSelect = $("#link-target-channel");
+  const botSelect = $("#link-sender-bot");
+  const pingSelect = $("#link-ping-role");
+  if (!chSelect) return;
+
+  const currentVal = chSelect.value;
+  chSelect.innerHTML = `<option value="">Select channel...</option>`;
+
+  if (state.allChannels && state.allChannels.length > 0) {
+    state.allChannels.forEach(ch => {
+      const opt = el("option", "", `#${ch.name}`);
+      opt.value = ch.id;
+      if (ch.id === currentVal) opt.selected = true;
+      chSelect.appendChild(opt);
+    });
+  }
+
+  if (botSelect) {
+    botSelect.innerHTML = `<option value="">Active Bot</option>`;
+    (state.bots || []).forEach(b => {
+      const opt = el("option", "", `${b.display_name} [${b.kind}]`);
+      opt.value = b.id;
+      botSelect.appendChild(opt);
+    });
+  }
+
+  if (pingSelect && state.roles) {
+    pingSelect.innerHTML = `<option value="">(no ping)</option>`;
+    state.roles.forEach(r => {
+      const opt = el("option", "", `@${r.name}`);
+      opt.value = `<@&${r.id}>`;
+      pingSelect.appendChild(opt);
+    });
+  }
+}
+
+function bindLinksTab() {
+  renderLinkItemRows();
+  updateLinkHubPreview();
+  loadSavedLinks();
+
+  $("#presetHubOfficial")?.addEventListener("click", () => {
+    $("#link-hub-name").value = "🌐 Official Hub & Store";
+    $("#link-hub-title").value = "🌐 INDRA BOT SYSTEM • Official Links";
+    $("#link-hub-desc").value = "Welcome to our official directory! Use the buttons below to access our store, community, and support portals.";
+    $("#link-hub-color").value = "#5865F2";
+    currentLinksData = [
+      { emoji: "🌐", label: "Official Website", url: "https://indra.gg", description: "Explore features, documentation & guides", button: true },
+      { emoji: "🛒", label: "Digital Store", url: "https://indra.gg/shop", description: "Instant delivery keys, products & subscriptions", button: true },
+      { emoji: "💬", label: "Discord Community", url: "https://discord.gg/indra", description: "Join our community & customer chat", button: true },
+      { emoji: "⭐", label: "Customer Vouches", url: "https://indra.gg/vouches", description: "Read verified customer reviews & feedback", button: true }
+    ];
+    renderLinkItemRows();
+    updateLinkHubPreview();
+    showToast("Loaded Official Hub preset.", "info");
+  });
+
+  $("#presetHubSocials")?.addEventListener("click", () => {
+    $("#link-hub-name").value = "📱 Social Media Directory";
+    $("#link-hub-title").value = "📱 INDRA • Official Socials & Streams";
+    $("#link-hub-desc").value = "Follow us across all platforms to catch giveaways, updates, and sneak peeks!";
+    $("#link-hub-color").value = "#E1306C";
+    currentLinksData = [
+      { emoji: "📺", label: "YouTube Channel", url: "https://youtube.com/@indra", description: "Product showcases, tutorials and guides", button: true },
+      { emoji: "🐦", label: "Twitter / X", url: "https://twitter.com/indra", description: "Daily announcements, updates & drops", button: true },
+      { emoji: "📱", label: "TikTok", url: "https://tiktok.com/@indra", description: "Short clips and community highlights", button: true },
+      { emoji: "✈️", label: "Telegram Channel", url: "https://t.me/indra", description: "Instant stock alerts and announcements", button: true }
+    ];
+    renderLinkItemRows();
+    updateLinkHubPreview();
+    showToast("Loaded Social Media preset.", "info");
+  });
+
+  $("#presetHubSupport")?.addEventListener("click", () => {
+    $("#link-hub-name").value = "🎫 Support & Community";
+    $("#link-hub-title").value = "🎫 INDRA • Support & Help Desk";
+    $("#link-hub-desc").value = "Need assistance or have questions before purchasing? Reach our staff team below:";
+    $("#link-hub-color").value = "#43B581";
+    currentLinksData = [
+      { emoji: "🎫", label: "Open a Ticket", url: "https://discord.gg/indra", description: "Connect with our 24/7 customer support", button: true },
+      { emoji: "📚", label: "Documentation", url: "https://docs.indra.gg", description: "Setup guides, FAQs and troubleshooting", button: true },
+      { emoji: "🛡️", label: "Terms of Service", url: "https://indra.gg/tos", description: "Store policies, warranties and refunds", button: true }
+    ];
+    renderLinkItemRows();
+    updateLinkHubPreview();
+    showToast("Loaded Support & Community preset.", "info");
+  });
+
+  $("#presetHubPayments")?.addEventListener("click", () => {
+    $("#link-hub-name").value = "💳 Payment Gateways";
+    $("#link-hub-title").value = "💳 INDRA • Secure Payment Portals";
+    $("#link-hub-desc").value = "We accept multiple secure payment methods for instant automated delivery:";
+    $("#link-hub-color").value = "#FAA61A";
+    currentLinksData = [
+      { emoji: "💳", label: "Card & Apple Pay", url: "https://indra.gg/pay", description: "Instant automated card checkout", button: true },
+      { emoji: "💎", label: "Cryptocurrency", url: "https://indra.gg/crypto", description: "BTC, LTC, USDT, ETH - zero fees", button: true },
+      { emoji: "💵", label: "CashApp & PayPal", url: "https://discord.gg/indra", description: "Open a ticket to pay via CashApp or PayPal", button: true }
+    ];
+    renderLinkItemRows();
+    updateLinkHubPreview();
+    showToast("Loaded Payment Gateways preset.", "info");
+  });
+
+  $("#btnAddLinkItem")?.addEventListener("click", () => {
+    currentLinksData.push({ emoji: "🔗", label: "", url: "", description: "", button: true });
+    renderLinkItemRows();
+    updateLinkHubPreview();
+  });
+
+  ["#link-hub-title", "#link-hub-desc", "#link-hub-color", "#link-hub-thumb", "#link-hub-banner", "#link-hub-render-buttons"].forEach(sel => {
+    $(sel)?.addEventListener("input", updateLinkHubPreview);
+    $(sel)?.addEventListener("change", updateLinkHubPreview);
+  });
+
+  $("#btnSaveLinksDraft")?.addEventListener("click", async () => {
+    const name = $("#link-hub-name")?.value.trim() || "Untitled Links";
+    const title = $("#link-hub-title")?.value.trim() || "🌐 Official Links";
+    const desc = $("#link-hub-desc")?.value.trim() || "";
+    const color = $("#link-hub-color")?.value || "#5865F2";
+    const thumb = $("#link-hub-thumb")?.value.trim();
+    const banner = $("#link-hub-banner")?.value.trim();
+    const render_buttons = $("#link-hub-render-buttons")?.checked !== false;
+
+    const bundle = {
+      name,
+      title,
+      description: desc,
+      color,
+      thumbnail_url: thumb,
+      banner_url: banner,
+      render_buttons,
+      links: currentLinksData
+    };
+
+    const res = await apiSend("/api/links", { bundle });
+    if (res.ok) {
+      showToast("Link preset saved successfully!", "success");
+      loadSavedLinks();
+    } else {
+      showToast(res.error || "Failed to save link preset.", "error");
+    }
+  });
+
+  $("#btnPostLinks")?.addEventListener("click", async () => {
+    const chId = $("#link-target-channel")?.value;
+    if (!chId) {
+      showToast("Please select a destination channel first.", "error");
+      return;
+    }
+
+    const postBtn = $("#btnPostLinks");
+    postBtn.disabled = true;
+    postBtn.textContent = "Posting...";
+
+    const bundle = {
+      name: $("#link-hub-name")?.value.trim() || "Official Links",
+      title: $("#link-hub-title")?.value.trim() || "🌐 Official Links",
+      description: $("#link-hub-desc")?.value.trim() || "",
+      color: $("#link-hub-color")?.value || "#5865F2",
+      thumbnail_url: $("#link-hub-thumb")?.value.trim(),
+      banner_url: $("#link-hub-banner")?.value.trim(),
+      render_buttons: $("#link-hub-render-buttons")?.checked !== false,
+      links: currentLinksData
+    };
+
+    const payload = {
+      channel_id: chId,
+      bot_id: $("#link-sender-bot")?.value || "",
+      ping_role: $("#link-ping-role")?.value || "",
+      ghost_ping: $("#link-ghost-ping")?.checked || false,
+      bundle
+    };
+
+    const res = await apiSend("/api/links/send", payload);
+    postBtn.disabled = false;
+    postBtn.textContent = "📢 Post Links to Discord";
+
+    if (res.ok) {
+      showToast("Links posted successfully to Discord!", "success");
+    } else {
+      showToast(res.error || "Failed to post links to Discord.", "error");
+    }
+  });
+
+  $("#btnResetLinksForm")?.addEventListener("click", () => {
+    currentLinksData = [
+      { emoji: "🌐", label: "Official Website", url: "https://indra.gg", description: "", button: true }
+    ];
+    renderLinkItemRows();
+    updateLinkHubPreview();
+    showToast("Form reset.", "info");
+  });
 }
 
 /* ---------- start-up ---------- */
@@ -4268,6 +4661,7 @@ async function init() {
   bindVouches();
   bindBackupRestore();
   bindAdminSecurity();
+  bindLinksTab();
 
   /* load everything: config -> looks -> settings -> bots -> pickers + lists */
   const configData = await apiGet("/api/config");
@@ -4293,7 +4687,7 @@ async function init() {
   await loadBots();                      // must come before the connection check
   updateSendAsOptions();
   await Promise.all([loadConnectionStatus(), loadGuilds(), loadLibrary(),
-                     loadHistory(), loadSchedules(), loadSections()]);
+                     loadHistory(), loadSchedules(), loadSections(), loadSavedLinks()]);
   refreshBotStatuses(false);              // fill the dots on the Bots page quietly
 
   /* open the tab you had open last time */

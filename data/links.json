@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "items": [
+    {
+      "id": "links-official",
+      "name": "🌐 Official Hub & Store",
+      "title": "🌐 INDRA BOT SYSTEM • Official Links",
+      "description": "Welcome to our official directory! Use the buttons below to access our store, community, and support portals.",
+      "color": "#5865F2",
+      "thumbnail_url": "",
+      "banner_url": "",
+      "render_buttons": true,
+      "links": [
+        {
+          "emoji": "🌐",
+          "label": "Official Website",
+          "url": "https://indra.gg",
+          "description": "Explore features, documentation & guides",
+          "button": true
+        },
+        {
+          "emoji": "🛒",
+          "label": "Digital Store",
+          "url": "https://indra.gg/shop",
+          "description": "Instant delivery keys, products & subscriptions",
+          "button": true
+        },
+        {
+          "emoji": "💬",
+          "label": "Discord Community",
+          "url": "https://discord.gg/indra",
+          "description": "Join our community & customer chat",
+          "button": true
+        },
+        {
+          "emoji": "⭐",
+          "label": "Customer Vouches",
+          "url": "https://indra.gg/vouches",
+          "description": "Read verified customer reviews & feedback",
+          "button": true
+        }
+      ],
+      "createdAt": "2026-09-19T12:00:00"
+    }
+  ]
+}

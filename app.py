@@ -1435,6 +1435,196 @@ def api_vouches_send():
 
 
 # ---------------------------------------------------------------------------
+# Link Sender & Directory Hub (data/links.json)
+# ---------------------------------------------------------------------------
+
+DEFAULT_STARTER_LINKS = [
+    {
+        "id": "links-official",
+        "name": "🌐 Official Hub & Store",
+        "title": "🌐 INDRA BOT SYSTEM • Official Links",
+        "description": "Welcome to our official directory! Use the buttons below to access our store, community, and support portals.",
+        "color": "#5865F2",
+        "thumbnail_url": "",
+        "banner_url": "",
+        "render_buttons": True,
+        "links": [
+            {"emoji": "🌐", "label": "Official Website", "url": "https://indra.gg", "description": "Explore features, documentation & guides", "button": True},
+            {"emoji": "🛒", "label": "Digital Store", "url": "https://indra.gg/shop", "description": "Instant delivery keys, products & subscriptions", "button": True},
+            {"emoji": "💬", "label": "Discord Community", "url": "https://discord.gg/indra", "description": "Join our community & customer chat", "button": True},
+            {"emoji": "⭐", "label": "Customer Vouches", "url": "https://indra.gg/vouches", "description": "Read verified customer reviews & feedback", "button": True}
+        ],
+        "createdAt": "2026-09-19T12:00:00"
+    }
+]
+
+@app.get("/api/links")
+def api_links_list():
+    """List all saved link directory presets."""
+    links = load_items("links.json")
+    if not links:
+        links = DEFAULT_STARTER_LINKS
+        save_items("links.json", links)
+    links.sort(key=lambda item: item.get("createdAt", ""), reverse=True)
+    return jsonify({"ok": True, "links": links})
+
+@app.post("/api/links")
+def api_links_save():
+    """Save or update a link directory preset."""
+    data = request.get_json(silent=True) or {}
+    bundle = data.get("bundle")
+    if not isinstance(bundle, dict):
+        return jsonify({"ok": False, "error": "No link bundle data sent."}), 400
+
+    link_id = str(bundle.get("id") or "").strip() or ("link-" + uuid.uuid4().hex[:8])
+    now_str = datetime.now().isoformat(timespec="seconds")
+    incoming = {
+        "id": link_id,
+        "name": str(bundle.get("name") or "Untitled Links").strip()[:100],
+        "title": str(bundle.get("title") or "🌐 Official Links").strip()[:200],
+        "description": str(bundle.get("description") or "").strip()[:4000],
+        "color": str(bundle.get("color") or "#5865F2").strip()[:20],
+        "thumbnail_url": str(bundle.get("thumbnail_url") or "").strip(),
+        "banner_url": str(bundle.get("banner_url") or "").strip(),
+        "render_buttons": bool(bundle.get("render_buttons", True)),
+        "links": bundle.get("links") if isinstance(bundle.get("links"), list) else [],
+        "createdAt": bundle.get("createdAt") or now_str,
+        "updatedAt": now_str
+    }
+
+    with DATA_LOCK:
+        all_links = load_items("links.json")
+        found = False
+        for i, existing in enumerate(all_links):
+            if existing.get("id") == link_id:
+                all_links[i] = incoming
+                found = True
+                break
+        if not found:
+            all_links.append(incoming)
+        save_items("links.json", all_links)
+
+    return jsonify({"ok": True, "bundle": incoming})
+
+@app.delete("/api/links/<link_id>")
+def api_links_delete(link_id):
+    """Delete a link directory preset."""
+    with DATA_LOCK:
+        all_links = load_items("links.json")
+        all_links = [l for l in all_links if l.get("id") != link_id]
+        save_items("links.json", all_links)
+    return jsonify({"ok": True})
+
+@app.post("/api/links/send")
+def api_links_send():
+    """Post an aesthetic link directory to Discord with optional interactive button action rows."""
+    data = request.get_json(silent=True) or {}
+    channel_id = str(data.get("channel_id") or "").strip()
+    bot_id = str(data.get("bot_id") or "").strip()
+    bundle = data.get("bundle") or {}
+
+    record, client, err = _bot_or_error(bot_id)
+    if err:
+        return err
+    if not channel_id:
+        return jsonify({"ok": False, "error": "Please pick a channel to send the links."}), 400
+
+    title = str(bundle.get("title") or "🌐 Official Links").strip()
+    description = str(bundle.get("description") or "").strip()
+    color_hex = str(bundle.get("color") or "#5865F2").strip()
+    try:
+        color_int = int(color_hex.lstrip("#"), 16)
+    except Exception:
+        color_int = 0x5865F2
+
+    thumbnail_url = str(bundle.get("thumbnail_url") or "").strip()
+    banner_url = str(bundle.get("banner_url") or "").strip()
+    render_buttons = bool(bundle.get("render_buttons", True))
+    raw_links = bundle.get("links") if isinstance(bundle.get("links"), list) else []
+
+    lines = []
+    if description:
+        lines.append(description)
+        lines.append("")
+
+    buttons_to_render = []
+    for l in raw_links:
+        if not isinstance(l, dict):
+            continue
+        emoji = str(l.get("emoji") or "🔗").strip()
+        label = str(l.get("label") or "Link").strip()
+        url = str(l.get("url") or "").strip()
+        subtext = str(l.get("description") or "").strip()
+        include_btn = bool(l.get("button", True))
+
+        if not url:
+            continue
+
+        if subtext:
+            lines.append(f"{emoji} [**{label}**]({url})\n> {subtext}\n")
+        else:
+            lines.append(f"{emoji} [**{label}**]({url})\n")
+
+        if include_btn and render_buttons and url.startswith(("http://", "https://", "discord://")):
+            btn_label = f"{emoji} {label}" if emoji and emoji != "🔗" else label
+            buttons_to_render.append({
+                "type": 2,          # Button
+                "style": 5,         # Link button
+                "label": btn_label[:80],
+                "url": url[:512]
+            })
+
+    embed = {
+        "title": title[:256],
+        "description": "\n".join(lines)[:4096],
+        "color": color_int,
+        "footer": {"text": "INDRA BOT SYSTEM • Official Links & Directory"},
+        "timestamp": datetime.now().isoformat()
+    }
+    if thumbnail_url:
+        embed["thumbnail"] = {"url": thumbnail_url}
+    if banner_url:
+        embed["image"] = {"url": banner_url}
+
+    payload = {"embeds": [embed]}
+
+    if buttons_to_render:
+        action_rows = []
+        for i in range(0, min(len(buttons_to_render), 25), 5):
+            chunk = buttons_to_render[i:i+5]
+            action_rows.append({"type": 1, "components": chunk})
+        payload["components"] = action_rows
+
+    ping_role = str(data.get("ping_role") or "").strip()
+    is_ghost = bool(data.get("ghost_ping"))
+    settings = get_settings()
+    mention_rules = build_allowed_mentions(settings.get("allow_everyone_mentions", False))
+    payload["allowed_mentions"] = mention_rules
+
+    if ping_role:
+        payload["content"] = ping_role
+
+    try:
+        if is_ghost and payload.get("content"):
+            ping_text = payload["content"]
+            payload["content"] = ""
+            def _ghost_ping_worker(p_text=ping_text, ch_id=channel_id):
+                try:
+                    p_res = client.send_message(ch_id, {"content": p_text, "allowed_mentions": mention_rules})
+                    if p_res and p_res.get("id"):
+                        time.sleep(5)
+                        client.delete_message(ch_id, p_res["id"])
+                except Exception as ex:
+                    print(f"Ghost ping worker failed: {ex}")
+            threading.Thread(target=_ghost_ping_worker, daemon=True).start()
+
+        sent = client.send_message(channel_id, payload)
+        return jsonify({"ok": True, "message_id": sent.get("id") if sent else ""})
+    except discord_api.DiscordAPIError as err:
+        return _bot_error_response(err)
+
+
+# ---------------------------------------------------------------------------
 # Full Backup & Restore (ZIP)
 # ---------------------------------------------------------------------------
 

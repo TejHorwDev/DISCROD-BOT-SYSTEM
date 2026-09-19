@@ -157,6 +157,10 @@
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="m12 17.27 6.18 3.73-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
         Vouches <span id="vouchesCount" class="count-badge">0</span>
       </button>
+      <button class="tab" data-tab="links" role="tab" aria-selected="false" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+        Link Sender <span id="linksCount" class="count-badge">0</span>
+      </button>
       <button class="tab" data-tab="history" role="tab" aria-selected="false" type="button">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M13 3a9 9 0 0 0-9 9H1l4 4 4-4H6a7 7 0 1 1 2.05 4.95l-1.42 1.42A9 9 0 1 0 13 3zm-1 5v5l4.25 2.52.75-1.23-3.5-2.08V8H12z"/></svg>
         History
@@ -1111,6 +1115,137 @@
         </aside>
       </div>
     </div>
+
+    <!-- ================= TAB: LINK SENDER ================= -->
+    <div id="tab-links" class="tab-panel" role="tabpanel" hidden>
+      <div class="builder-grid">
+        <div class="builder-col">
+
+          <section class="card">
+            <div class="card-head row-between">
+              <div>
+                <h2>🔗 Discord Link Sender &amp; Directory Hub</h2>
+                <p>Compose aesthetic link directories with clickable Discord Action Row buttons and post to any channel.</p>
+              </div>
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="row" style="gap:8px; margin-bottom:18px; flex-wrap:wrap;">
+              <span class="muted small" style="align-self:center; font-weight:600;">⚡ Quick Presets:</span>
+              <button class="btn btn-ghost btn-sm" id="presetHubOfficial" type="button">🌐 Official Hub &amp; Store</button>
+              <button class="btn btn-ghost btn-sm" id="presetHubSocials" type="button">📱 Social Media</button>
+              <button class="btn btn-ghost btn-sm" id="presetHubSupport" type="button">🎫 Support &amp; Community</button>
+              <button class="btn btn-ghost btn-sm" id="presetHubPayments" type="button">💳 Payment Portals</button>
+            </div>
+
+            <form id="linksForm" onsubmit="return false;">
+              <!-- Embed Header Details -->
+              <div class="grid-2">
+                <div class="field">
+                  <label for="link-hub-name">Preset Name <span class="label-hint">(for saving)</span></label>
+                  <input id="link-hub-name" type="text" placeholder="e.g. Official Server Links" value="🌐 Official Hub &amp; Store">
+                </div>
+                <div class="field">
+                  <label for="link-hub-title">Embed Title <span class="req">*</span></label>
+                  <input id="link-hub-title" type="text" placeholder="e.g. 🌐 INDRA • Official Links &amp; Hubs" value="🌐 INDRA BOT SYSTEM • Official Links" required>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="link-hub-desc">Description / Tagline</label>
+                <textarea id="link-hub-desc" rows="2" placeholder="Welcome to our official links hub! Click any button below to visit our websites and portals.">Welcome to our official directory! Use the buttons below to access our store, community, and support portals.</textarea>
+              </div>
+
+              <div class="grid-3" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+                <div class="field">
+                  <label for="link-hub-color">Accent Color</label>
+                  <input id="link-hub-color" type="color" value="#5865f2" style="height:38px; padding:2px; cursor:pointer; width:100%; border-radius:8px; background:var(--bg-input); border:1px solid var(--border);">
+                </div>
+                <div class="field">
+                  <label for="link-hub-thumb">Thumbnail URL <span class="label-hint">(optional)</span></label>
+                  <input id="link-hub-thumb" type="url" placeholder="https://...">
+                </div>
+                <div class="field">
+                  <label for="link-hub-banner">Banner Image URL <span class="label-hint">(optional)</span></label>
+                  <input id="link-hub-banner" type="url" placeholder="https://...">
+                </div>
+              </div>
+
+              <div class="field checkbox-field" style="margin-top: 10px;">
+                <label class="check-label"><input id="link-hub-render-buttons" type="checkbox" checked> 🎛️ <strong>Attach as Discord Buttons (Action Rows)</strong> <span class="label-hint">(clickable link buttons below message)</span></label>
+              </div>
+
+              <!-- Links List -->
+              <div class="card-head" style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border);">
+                <h3>Links List</h3>
+                <p class="muted small">Add your links below. Each link will be formatted into the embed and attached as a Discord button.</p>
+              </div>
+
+              <div id="linksItemsContainer" style="display:flex; flex-direction:column; gap:12px; margin-bottom:14px;">
+                <!-- dynamic link rows inserted by JS -->
+              </div>
+
+              <button id="btnAddLinkItem" class="btn btn-ghost btn-sm" type="button" style="margin-bottom:20px;">+ Add Another Link</button>
+
+              <!-- Destination & Sending -->
+              <div class="grid-2" style="padding-top:16px; border-top:1px solid var(--border);">
+                <div class="field">
+                  <label for="link-target-channel">Destination Channel <span class="req">*</span></label>
+                  <select id="link-target-channel">
+                    <option value="">Select channel...</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="link-sender-bot">Send As Bot</label>
+                  <select id="link-sender-bot">
+                    <option value="">Active Bot</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid-2">
+                <div class="field">
+                  <label for="link-ping-role">Role Mention <span class="label-hint">(optional ping)</span></label>
+                  <select id="link-ping-role">
+                    <option value="">(no ping)</option>
+                  </select>
+                </div>
+                <div class="field checkbox-field" style="align-self:end;">
+                  <label class="check-label"><input id="link-ghost-ping" type="checkbox"> 👻 Ghost Ping <span class="label-hint">(deletes mention after 5s)</span></label>
+                </div>
+              </div>
+
+              <div class="row" style="gap:10px; margin-top:20px;">
+                <button id="btnPostLinks" class="btn btn-send" type="button">📢 Post Links to Discord</button>
+                <button id="btnSaveLinksDraft" class="btn btn-ghost" type="button">💾 Save Preset</button>
+                <button id="btnResetLinksForm" class="btn btn-ghost" type="button">🔄 Reset</button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Saved Presets List -->
+          <section class="card" style="margin-top:20px;">
+            <div class="card-head">
+              <h2>Saved Link Presets</h2>
+              <p>Your saved link directories. Click to load, repost, or delete.</p>
+            </div>
+            <div id="savedLinksList" class="sch-list"></div>
+          </section>
+
+        </div>
+
+        <!-- Right: Live Preview -->
+        <aside class="preview-col">
+          <div class="preview-card">
+            <div class="preview-toolbar">
+              <span class="preview-title">👁️ Live Link Hub Preview</span>
+            </div>
+            <div id="linkPreviewBody" class="dc-chat" style="padding:16px;"></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
 
   </main>
 
