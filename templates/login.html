@@ -4,24 +4,29 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sign In &bull; INDRA BOT SYSTEM</title>
-  <meta name="description" content="Secure Cloud Dashboard Sign In for INDRA BOT SYSTEM">
+  <meta name="description" content="Sign In to INDRA BOT SYSTEM">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%235865F2'/%3E%3Cpath d='M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z' transform='translate(1.2 1.2) scale(0.9)' fill='%23fff'/%3E%3Ccircle cx='7' cy='7' r='1.5' fill='%235865F2' transform='translate(1.2 1.2) scale(0.9)'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-deep: #050608;
-      --card-bg: rgba(13, 16, 23, 0.88);
-      --card-border: rgba(255, 255, 255, 0.09);
-      --accent-discord: #5865F2;
-      --accent-cyan: #00f0ff;
-      --accent-green: #10B981;
-      --text-white: #ffffff;
-      --text-muted: #94a3b8;
-      --text-sub: #64748b;
-      --input-bg: rgba(18, 22, 33, 0.92);
-      --input-border: rgba(255, 255, 255, 0.12);
+      --bg-main: #090a0c;
+      --card-bg: #121418;
+      --card-border: #20232a;
+      --input-bg: #0d0f12;
+      --input-border: #242731;
+      --input-border-focus: #4b5162;
+      --text-white: #f8fafc;
+      --text-muted: #8e95a5;
+      --text-sub: #5d6373;
+      --btn-primary: #1e222b;
+      --btn-primary-hover: #262b36;
+      --btn-border: #2e3340;
+      --accent-brand: #5865F2;
+      --danger-bg: rgba(239, 68, 68, 0.1);
+      --danger-border: rgba(239, 68, 68, 0.25);
+      --danger-text: #f87171;
     }
 
     * {
@@ -32,132 +37,71 @@
 
     body {
       min-height: 100vh;
-      background-color: var(--bg-deep);
-      background-image: 
-        radial-gradient(circle at 50% -10%, rgba(88, 101, 242, 0.28) 0%, transparent 60%),
-        radial-gradient(circle at 90% 85%, rgba(0, 240, 255, 0.10) 0%, transparent 50%),
-        radial-gradient(circle at 10% 85%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
+      background-color: var(--bg-main);
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       color: var(--text-white);
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 24px 16px;
-      position: relative;
-      overflow-x: hidden;
-    }
-
-    /* Ambient Background Grid */
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      background-image: 
-        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-      background-size: 36px 36px;
-      pointer-events: none;
-      z-index: 1;
     }
 
     .auth-container {
       width: 100%;
-      max-width: 440px;
-      position: relative;
-      z-index: 10;
-      animation: fadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(14px) scale(0.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      max-width: 420px;
     }
 
     .auth-card {
       background: var(--card-bg);
-      backdrop-filter: blur(36px);
-      -webkit-backdrop-filter: blur(36px);
       border: 1px solid var(--card-border);
-      border-radius: 26px;
-      padding: 38px 34px;
-      box-shadow: 
-        0 30px 80px -15px rgba(0, 0, 0, 0.85),
-        0 0 50px -10px rgba(88, 101, 242, 0.22);
-      position: relative;
-      overflow: hidden;
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .auth-card:hover {
-      border-color: rgba(88, 101, 242, 0.4);
-      box-shadow: 
-        0 35px 90px -15px rgba(0, 0, 0, 0.95),
-        0 0 65px -8px rgba(88, 101, 242, 0.32);
-    }
-
-    /* Top Aurora Accent Line */
-    .auth-card::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 15%;
-      right: 15%;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, #5865F2, #00f0ff, transparent);
-      opacity: 0.85;
+      border-radius: 18px;
+      padding: 36px 32px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
     }
 
     .brand-header {
       text-align: center;
-      margin-bottom: 28px;
+      margin-bottom: 26px;
     }
 
     .brand-icon-wrap {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 68px;
-      height: 68px;
-      border-radius: 20px;
-      background: linear-gradient(135deg, rgba(88, 101, 242, 0.25), rgba(0, 240, 255, 0.1));
-      border: 1px solid rgba(88, 101, 242, 0.45);
-      box-shadow: 0 10px 30px rgba(88, 101, 242, 0.32);
-      margin-bottom: 16px;
-      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    .brand-icon-wrap:hover {
-      transform: scale(1.08) rotate(3deg);
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      background: #171a21;
+      border: 1px solid #282d39;
+      margin-bottom: 14px;
     }
 
     .brand-title {
-      font-size: 23px;
-      font-weight: 800;
-      letter-spacing: -0.025em;
-      background: linear-gradient(135deg, #ffffff 30%, #cbd5e1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 6px;
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-white);
+      margin-bottom: 5px;
     }
 
     .brand-subtitle {
-      font-size: 13.5px;
+      font-size: 13px;
       color: var(--text-muted);
-      line-height: 1.5;
+      line-height: 1.4;
     }
 
     .status-pill {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: #34d399;
+      background: #15181f;
+      border: 1px solid #242935;
+      color: #94a3b8;
       font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
+      font-weight: 600;
+      letter-spacing: 0.03em;
       text-transform: uppercase;
-      padding: 4px 12px;
+      padding: 4px 11px;
       border-radius: 999px;
       margin-top: 10px;
     }
@@ -166,58 +110,41 @@
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background: #10B981;
-      box-shadow: 0 0 8px #10B981;
-      animation: pulseDot 2s infinite;
+      background: #22c55e;
     }
 
-    @keyframes pulseDot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
-    }
-
-    /* Error / Alert Box */
     .alert-box {
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid rgba(239, 68, 68, 0.35);
-      color: #fca5a5;
-      padding: 12px 14px;
-      border-radius: 12px;
+      background: var(--danger-bg);
+      border: 1px solid var(--danger-border);
+      color: var(--danger-text);
+      padding: 11px 13px;
+      border-radius: 10px;
       font-size: 13px;
       font-weight: 500;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       display: flex;
       align-items: center;
-      gap: 10px;
-      animation: shake 0.3s ease;
-    }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-4px); }
-      75% { transform: translateX(4px); }
+      gap: 9px;
     }
 
     .auth-form {
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 16px;
     }
 
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 7px;
+      gap: 6px;
     }
 
     .form-label {
       font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.05em;
+      font-weight: 600;
+      letter-spacing: 0.03em;
       text-transform: uppercase;
       color: #cbd5e1;
-      display: flex;
-      justify-content: space-between;
     }
 
     .input-wrap {
@@ -229,36 +156,28 @@
     .input-icon {
       position: absolute;
       left: 14px;
-      width: 19px;
-      height: 19px;
-      color: #64748b;
+      width: 17px;
+      height: 17px;
+      color: #555b6d;
       pointer-events: none;
-      transition: color 0.2s ease;
     }
 
     .form-input {
       width: 100%;
-      padding: 13px 44px 13px 44px;
+      padding: 12px 14px 12px 42px;
       background: var(--input-bg);
       border: 1px solid var(--input-border);
-      border-radius: 12px;
+      border-radius: 10px;
       color: #fff;
       font-size: 14px;
       font-family: inherit;
       outline: none;
-      transition: all 0.2s ease;
+      transition: border-color 0.15s ease, background 0.15s ease;
     }
 
     .form-input:focus {
-      border-color: var(--accent-discord);
-      background: rgba(22, 27, 40, 0.98);
-      box-shadow: 
-        0 0 0 3px rgba(88, 101, 242, 0.28),
-        0 0 20px rgba(88, 101, 242, 0.16);
-    }
-
-    .form-input:focus ~ .input-icon {
-      color: var(--accent-discord);
+      border-color: var(--input-border-focus);
+      background: #111317;
     }
 
     .btn-toggle-pwd {
@@ -268,12 +187,10 @@
       border: none;
       color: #64748b;
       cursor: pointer;
-      padding: 5px;
+      padding: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 6px;
-      transition: color 0.15s ease;
     }
 
     .btn-toggle-pwd:hover {
@@ -282,86 +199,77 @@
 
     .btn-submit {
       width: 100%;
-      padding: 14px;
+      padding: 13px;
       margin-top: 6px;
-      background: linear-gradient(135deg, #5865F2 0%, #4752C4 100%);
-      color: #fff;
-      font-size: 14.5px;
-      font-weight: 700;
+      background: var(--btn-primary);
+      border: 1px solid var(--btn-border);
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
       font-family: inherit;
-      border: none;
-      border-radius: 12px;
+      border-radius: 10px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      box-shadow: 0 4px 20px rgba(88, 101, 242, 0.42);
-      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative;
-      overflow: hidden;
+      gap: 8px;
+      transition: background 0.15s ease, border-color 0.15s ease;
     }
 
     .btn-submit:hover {
-      background: linear-gradient(135deg, #6472f5 0%, #4e5bd4 100%);
-      transform: translateY(-1.5px);
-      box-shadow: 0 8px 28px rgba(88, 101, 242, 0.58);
+      background: var(--btn-primary-hover);
+      border-color: #3b4252;
     }
 
     .btn-submit:active {
-      transform: translateY(0.5px);
-      box-shadow: 0 3px 12px rgba(88, 101, 242, 0.4);
+      transform: translateY(1px);
     }
 
     .btn-submit:disabled {
-      opacity: 0.65;
+      opacity: 0.6;
       cursor: not-allowed;
-      transform: none;
     }
 
-    /* Links row */
     .links-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-top: 22px;
-      padding-top: 18px;
-      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid #1c1f26;
       font-size: 13px;
       color: var(--text-muted);
     }
 
     .links-row a {
-      color: #818cf8;
+      color: #8b9bb4;
       text-decoration: none;
       font-weight: 600;
-      transition: color 0.15s ease;
     }
 
     .links-row a:hover {
-      color: #a5b4fc;
+      color: #ffffff;
       text-decoration: underline;
     }
 
-    /* Feature Pills */
     .features-row {
       display: flex;
       justify-content: center;
-      gap: 12px;
-      margin-top: 22px;
+      gap: 8px;
+      margin-top: 18px;
       flex-wrap: wrap;
     }
 
     .feature-tag {
-      font-size: 11.5px;
+      font-size: 11px;
       color: var(--text-sub);
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      background: rgba(255, 255, 255, 0.03);
-      padding: 4px 10px;
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      background: #101216;
+      padding: 4px 9px;
+      border-radius: 6px;
+      border: 1px solid #1e2129;
     }
   </style>
 </head>
@@ -371,14 +279,14 @@
     <div class="auth-card">
       <div class="brand-header">
         <div class="brand-icon-wrap">
-          <svg viewBox="0 0 24 24" width="36" height="36" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
             <rect width="24" height="24" rx="6" fill="#5865F2"/>
             <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z" transform="translate(1.2 1.2) scale(0.9)" fill="#fff"/>
             <circle cx="7" cy="7" r="1.5" fill="#5865F2" transform="translate(1.2 1.2) scale(0.9)"/>
           </svg>
         </div>
         <h1 class="brand-title">INDRA BOT SYSTEM</h1>
-        <p class="brand-subtitle">Cloud Multi-Tenant Dashboard &bull; Sign in to continue</p>
+        <p class="brand-subtitle">Sign in to access your dashboard</p>
         <div class="status-pill">
           <span class="status-dot"></span>
           <span>System Online &bull; v2.0</span>
@@ -386,7 +294,7 @@
       </div>
 
       <div id="loginAlert" class="alert-box" {% if not error %}style="display: none;"{% endif %}>
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
         <span id="loginAlertText">{{ error or 'Invalid email or password.' }}</span>
       </div>
 
@@ -405,14 +313,14 @@
             <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             <input type="password" id="adminPassword" name="password" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
             <button type="button" class="btn-toggle-pwd" id="togglePwdBtn" title="Toggle password visibility">
-              <svg id="eyeIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <svg id="eyeIcon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             </button>
           </div>
         </div>
 
         <button type="submit" class="btn-submit" id="submitBtn">
-          <span>Sign In to Studio</span>
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          <span>Sign In</span>
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
         </button>
       </form>
 
@@ -422,9 +330,9 @@
       </div>
 
       <div class="features-row">
-        <span class="feature-tag">&#9889; Multi-Tenant</span>
-        <span class="feature-tag">&#128274; Isolated Sandbox</span>
-        <span class="feature-tag">&#128273; Zero-Storage CDN</span>
+        <span class="feature-tag">Multi-Tenant</span>
+        <span class="feature-tag">Isolated Storage</span>
+        <span class="feature-tag">Zero-Storage CDN</span>
       </div>
     </div>
   </div>
@@ -454,7 +362,7 @@
       const password = pwdInput.value;
 
       submitBtn.disabled = true;
-      submitBtn.querySelector('span').textContent = 'Authenticating...';
+      submitBtn.querySelector('span').textContent = 'Signing in...';
 
       try {
         const res = await fetch('/login', {
@@ -464,19 +372,18 @@
         });
         const data = await res.json();
         if (data.ok) {
-          submitBtn.querySelector('span').textContent = 'Access Granted! Redirecting...';
-          submitBtn.style.background = '#10B981';
+          submitBtn.querySelector('span').textContent = 'Success! Loading...';
+          submitBtn.style.background = '#15803d';
           setTimeout(() => {
             window.location.href = '/';
-          }, 450);
+          }, 350);
         } else {
           alertText.textContent = data.error || 'Invalid credentials.';
           alertBox.style.display = 'flex';
           submitBtn.disabled = false;
-          submitBtn.querySelector('span').textContent = 'Sign In to Studio';
+          submitBtn.querySelector('span').textContent = 'Sign In';
         }
       } catch (err) {
-        // Form fallback
         form.submit();
       }
     });
