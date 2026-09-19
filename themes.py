@@ -160,14 +160,14 @@ def _empty_store():
     return {"schema_version": THEMES_SCHEMA_VERSION, "themes": []}
 
 
-def _load_store():
-    data = load_json(THEMES_FILE, None)
+def _load_store(base_dir=None):
+    data = load_json(THEMES_FILE, None, base_dir=base_dir)
     if isinstance(data, dict) and isinstance(data.get("themes"), list):
         return data
     return _empty_store()
 
 
-def ensure_themes():
+def ensure_themes(base_dir=None):
     """
     Make sure data/themes.json exists and holds every built-in theme.
 
@@ -180,7 +180,7 @@ def ensure_themes():
     Returns True when the file on disk was written.
     """
     with _THEMES_LOCK:
-        store = _load_store()
+        store = _load_store(base_dir=base_dir)
         known_ids = {theme.get("id") for theme in store["themes"]}
         changed = False
 
@@ -191,17 +191,17 @@ def ensure_themes():
 
         if changed or "schema_version" not in store:
             store["schema_version"] = THEMES_SCHEMA_VERSION
-            save_json(THEMES_FILE, store)
+            save_json(THEMES_FILE, store, base_dir=base_dir)
             return True
         return False
 
 
-def list_themes():
+def list_themes(base_dir=None):
     """
     All themes: the 12 built-ins first (in their designed order), then your
     custom themes sorted by name. Never returns secrets - there are none.
     """
-    store = _load_store()
+    store = _load_store(base_dir=base_dir)
     customs = sorted(
         (theme for theme in store["themes"] if not theme.get("builtin")),
         key=lambda theme: theme.get("name", "").lower())
@@ -219,11 +219,11 @@ def list_themes():
     return result
 
 
-def get_theme(theme_id):
+def get_theme(theme_id, base_dir=None):
     """One theme by id (None when it does not exist)."""
     if not theme_id:
         return None
-    for theme in _load_store()["themes"]:
+    for theme in _load_store(base_dir=base_dir)["themes"]:
         if theme.get("id") == theme_id:
             return theme
     return None
@@ -314,7 +314,7 @@ def _unique_id(base, taken):
     return candidate
 
 
-def save_theme(incoming, theme_id=None):
+def save_theme(incoming, theme_id=None, base_dir=None):
     """
     Create or update a CUSTOM theme. Returns (theme, error).
     (Built-ins are refused - see sanitize_theme.)
@@ -324,7 +324,7 @@ def save_theme(incoming, theme_id=None):
         return None, error
 
     with _THEMES_LOCK:
-        store = _load_store()
+        store = _load_store(base_dir=base_dir)
         known = {theme.get("id"): i for i, theme in enumerate(store["themes"])}
 
         if theme["id"] in known:
@@ -337,16 +337,16 @@ def save_theme(incoming, theme_id=None):
             theme["id"] = _unique_id(theme["id"], known)
             store["themes"].append(theme)
 
-        save_json(THEMES_FILE, store)
+        save_json(THEMES_FILE, store, base_dir=base_dir)
         return theme, None
 
 
-def duplicate_theme(theme_id):
+def duplicate_theme(theme_id, base_dir=None):
     """
     Copy any theme (built-in or custom) into a new editable custom one.
     Returns (new_theme, error).
     """
-    original = get_theme(theme_id)
+    original = get_theme(theme_id, base_dir=base_dir)
     if original is None:
         return None, "That theme does not exist."
 
@@ -354,17 +354,17 @@ def duplicate_theme(theme_id):
             if key not in ("id", "builtin", "created_at")}
     copy["name"] = (original.get("name", "Theme") + " copy")[:40]
     copy["description"] = "Your editable copy of " + original.get("name", "?") + "."
-    return save_theme(copy)
+    return save_theme(copy, base_dir=base_dir)
 
 
-def delete_theme(theme_id):
+def delete_theme(theme_id, base_dir=None):
     """
     Delete a CUSTOM theme (built-ins are protected).
     Products and sections that used it simply fall back to their own colors.
     Returns (ok, error).
     """
     with _THEMES_LOCK:
-        store = _load_store()
+        store = _load_store(base_dir=base_dir)
         kept, removed = [], None
         for theme in store["themes"]:
             if theme.get("id") == theme_id:
@@ -378,5 +378,5 @@ def delete_theme(theme_id):
             return False, "Built-in themes cannot be deleted - they are part of the app."
 
         store["themes"] = kept
-        save_json(THEMES_FILE, store)
+        save_json(THEMES_FILE, store, base_dir=base_dir)
         return True, None

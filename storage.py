@@ -111,33 +111,33 @@ def _lock_for(filename):
 # Basic folder + path helpers
 # ---------------------------------------------------------------------------
 
-def ensure_data_dir():
-    """Create the data/ folder if it does not exist yet (first run)."""
-    os.makedirs(DATA_DIR, exist_ok=True)
+def ensure_data_dir(base_dir=None):
+    """Create the data/ folder (or user data folder) if it does not exist yet."""
+    os.makedirs(base_dir or DATA_DIR, exist_ok=True)
 
 
-def path_for(filename):
+def path_for(filename, base_dir=None):
     """
-    Turn a simple file name into a full path inside the data folder.
+    Turn a simple file name into a full path inside the data folder (or user folder).
     Example:  path_for("settings.json") -> .../seller-bot/data/settings.json
     """
-    return os.path.join(DATA_DIR, filename)
+    return os.path.join(base_dir or DATA_DIR, filename)
 
 
 # ---------------------------------------------------------------------------
 # Raw load / save (used by migrations and by bots.py for its own file)
 # ---------------------------------------------------------------------------
 
-def load_json(filename, default):
+def load_json(filename, default, base_dir=None):
     """
     Read a JSON file from the data folder and return it as Python data.
 
     filename - the file name, e.g. "settings.json"
     default  - what to return if the file does not exist yet
-               (e.g. [] for an empty list, {} for empty settings)
+    base_dir - optional custom directory (e.g. data/users/<user_id>/)
     """
-    ensure_data_dir()
-    path = path_for(filename)
+    ensure_data_dir(base_dir)
+    path = path_for(filename, base_dir)
 
     # No file yet? That is fine - return the default (first run).
     if not os.path.exists(path):
@@ -150,9 +150,6 @@ def load_json(filename, default):
                 return default          # an empty file counts as "not there yet"
             return json.loads(content)  # turn the text into Python data
     except (json.JSONDecodeError, OSError):
-        # Something is wrong with the file. Instead of crashing, we keep the
-        # broken copy next to it as ".corrupted" (so nothing is lost) and
-        # start fresh with the default.
         try:
             os.replace(path, path + ".corrupted")
         except OSError:
@@ -160,28 +157,22 @@ def load_json(filename, default):
         return default
 
 
-def save_json(filename, data):
+def save_json(filename, data, base_dir=None):
     """
     Save Python data into a JSON file in the data folder - the safe way.
-
-    Step by step:
-      1. take this file's lock (only one writer at a time),
-      2. write everything into "filename.tmp",
-      3. flush it down to the disk (so it is really saved),
-      4. swap the temp file over the real file in one atomic step.
     """
-    ensure_data_dir()
-    path = path_for(filename)
+    ensure_data_dir(base_dir)
+    path = path_for(filename, base_dir)
     tmp_path = path + ".tmp"
 
-    with _lock_for(filename):
+    lock_key = f"{base_dir or ''}:{filename}"
+    with _lock_for(lock_key):
         with open(tmp_path, "w", encoding="utf-8") as file:
-            # indent=2 makes the file human-readable if you open it in Notepad
             json.dump(data, file, indent=2, ensure_ascii=False)
-            file.flush()                    # push the text out of Python ...
-            os.fsync(file.fileno())         # ... and onto the actual disk
+            file.flush()
+            os.fsync(file.fileno())
 
-        os.replace(tmp_path, path)          # the atomic swap - never half-written
+        os.replace(tmp_path, path)
     return True
 
 
@@ -189,12 +180,12 @@ def save_json(filename, data):
 # Typed helpers for the two file shapes we use
 # ---------------------------------------------------------------------------
 
-def load_items(filename):
+def load_items(filename, base_dir=None):
     """
     Read a "wrapped list" file (products / history / schedules) and return
     ONLY the list of records. Missing file or old shape -> empty list.
     """
-    doc = load_json(filename, None)
+    doc = load_json(filename, None, base_dir=base_dir)
     if isinstance(doc, dict) and isinstance(doc.get("items"), list):
         return doc["items"]
     if isinstance(doc, list):            # very old shape, just in case
@@ -202,25 +193,25 @@ def load_items(filename):
     return []
 
 
-def save_items(filename, items):
+def save_items(filename, items, base_dir=None):
     """Save a list of records into a "wrapped list" file with the version."""
     save_json(filename, {
         "schema_version": CURRENT_SCHEMA.get(filename, 1),
         "items": items,
-    })
+    }, base_dir=base_dir)
 
 
-def load_doc(filename):
+def load_doc(filename, base_dir=None):
     """Read a dictionary file (settings.json ...). Missing -> empty dict."""
-    doc = load_json(filename, None)
+    doc = load_json(filename, None, base_dir=base_dir)
     return doc if isinstance(doc, dict) else {}
 
 
-def save_doc(filename, doc):
+def save_doc(filename, doc, base_dir=None):
     """Save a dictionary file, stamping the current schema version on it."""
-    out = dict(doc)
-    out["schema_version"] = CURRENT_SCHEMA.get(filename, doc.get("schema_version", 1))
-    save_json(filename, out)
+    payload = dict(doc) if isinstance(doc, dict) else {}
+    payload["schema_version"] = CURRENT_SCHEMA.get(filename, 1)
+    save_json(filename, payload, base_dir=base_dir)
 
 
 # ---------------------------------------------------------------------------
@@ -502,7 +493,7 @@ def run_migrations():
 # First-run creation of missing data files
 # ---------------------------------------------------------------------------
 
-def ensure_data_files(default_factories):
+def ensure_data_files(default_factories, base_dir=None):
     """
     Create any missing data file using the given factory functions.
 
@@ -510,7 +501,8 @@ def ensure_data_files(default_factories):
                         returns the COMPLETE first-run content of that file.
                         Only called when the file does not exist yet.
     """
-    ensure_data_dir()
+    ensure_data_dir(base_dir=base_dir)
     for filename, factory in default_factories.items():
-        if not os.path.exists(path_for(filename)):
-            save_json(filename, factory())
+        if not os.path.exists(path_for(filename, base_dir=base_dir)):
+            save_json(filename, factory(), base_dir=base_dir)
+

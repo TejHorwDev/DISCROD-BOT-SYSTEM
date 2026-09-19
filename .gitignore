@@ -17,6 +17,9 @@ deploy.zip
 *.tmp
 *.lock
 
-# Uploads cache (optional, keep data/ empty or template)
+# Uploads & tenant cache
 data/uploads/*
 !data/uploads/.gitkeep
+data/users/*
+!data/users/.gitkeep
+scratch/

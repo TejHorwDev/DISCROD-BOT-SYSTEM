@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "licenses": [
+    {
+      "key": "INDRA-VIP-2026",
+      "status": "unused",
+      "created_at": "2026-09-19T00:00:00",
+      "used_by": null,
+      "used_by_id": null,
+      "used_at": null
+    },
+    {
+      "key": "INDRA-FRIEND-7788",
+      "status": "unused",
+      "created_at": "2026-09-19T00:00:00",
+      "used_by": null,
+      "used_by_id": null,
+      "used_at": null
+    },
+    {
+      "key": "INDRA-PRO-9921",
+      "status": "unused",
+      "created_at": "2026-09-19T00:00:00",
+      "used_by": null,
+      "used_by_id": null,
+      "used_at": null
+    },
+    {
+      "key": "INDRA-CORE-5544",
+      "status": "unused",
+      "created_at": "2026-09-19T00:00:00",
+      "used_by": null,
+      "used_by_id": null,
+      "used_at": null
+    },
+    {
+      "key": "INDRA-ELITE-1122",
+      "status": "unused",
+      "created_at": "2026-09-19T00:00:00",
+      "used_by": null,
+      "used_by_id": null,
+      "used_at": null
+    },
+    {
+      "key": "INDRA-NEXUS-3344",
+      "status": "unused",
+      "created_at": "2026-09-19T00:00:00",
+      "used_by": null,
+      "used_by_id": null,
+      "used_at": null
+    }
+  ]
+}

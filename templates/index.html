@@ -59,11 +59,17 @@
       </div>
     </div>
 
-    <!-- Admin Account & Sign Out -->
+    <!-- Admin / User Account & Sign Out -->
     <div class="user-nav" id="userNav" style="display: flex; align-items: center; gap: 10px; margin-left: auto;">
+      <button id="openEmojiGifHubBtn" class="btn btn-ghost" type="button" style="padding: 6px 12px; font-size: 12.5px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(88,101,242,0.3); background: rgba(88,101,242,0.12); color: #c7d2fe;" title="Open Zero-Storage Emoji & GIF Hub">
+        <span style="font-size: 14px;">✨</span>
+        <span>Emoji &amp; GIF Hub</span>
+      </button>
+
       <div class="user-pill" style="display: flex; align-items: center; gap: 7px; padding: 6px 13px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; font-size: 12.5px; color: #cbd5e1;">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="#5865F2"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
         <span id="topbarAdminEmail">admin@indra.gg</span>
+        <span id="topbarRoleBadge" class="tag tag-blurple" style="font-size: 10.5px; padding: 2px 7px; border-radius: 10px; text-transform: uppercase;">Admin</span>
       </div>
       <a href="/logout" class="btn btn-ghost" style="padding: 6px 12px; font-size: 12.5px; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.1);" title="Sign out of INDRA BOT SYSTEM">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
@@ -180,6 +186,10 @@
       <button class="tab" data-tab="settings" role="tab" aria-selected="false" type="button">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="m19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.61.22L2.64 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.42.34.61.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.23.09.47 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 15.6 12 3.6 3.6 0 0 1 12 15.6z"/></svg>
         Settings
+      </button>
+      <button class="tab" data-tab="admin" id="tabAdminBtn" role="tab" aria-selected="false" type="button" style="display: none; background: rgba(234, 179, 8, 0.1); border-color: rgba(234, 179, 8, 0.3); color: #facc15;">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5m14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>
+        👑 Admin Hub
       </button>
     </nav>
 
@@ -1246,6 +1256,133 @@
       </div>
     </div>
 
+    <!-- ================= TAB: ADMIN HUB (MASTER ADMIN ONLY) ================= -->
+    <div id="tab-admin" class="tab-panel" role="tabpanel" style="display: none;">
+      <div class="card" style="margin-bottom: 24px; border: 1px solid rgba(234, 179, 8, 0.3); background: linear-gradient(135deg, rgba(234, 179, 8, 0.06), transparent 70%);">
+        <div class="card-head">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h2 style="color: #facc15; display: flex; align-items: center; gap: 8px; margin: 0 0 6px 0;">
+                <span>👑</span> Master Admin Control Hub
+              </h2>
+              <p style="margin: 0;">Manage registered friend accounts, generate license keys, configure webhook alerts, and purge temporary caches.</p>
+            </div>
+            <button id="btnRefreshAdminData" class="btn btn-sm btn-ghost" type="button" style="border: 1px solid rgba(234, 179, 8, 0.3); color: #facc15;">🔄 Refresh Data</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid for License Generator & Webhook Config -->
+      <div class="grid-2" style="margin-bottom: 24px; gap: 20px;">
+        <!-- Card: License Key Generator -->
+        <section class="card">
+          <div class="card-head">
+            <h3>🔑 Generate License Keys</h3>
+            <p class="muted small">Create one-time redemption license keys to give to your friends.</p>
+          </div>
+          <form id="formGenLicense" style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="grid-2">
+              <div class="field">
+                <label for="licGenPrefix">Key Prefix</label>
+                <input id="licGenPrefix" type="text" value="INDRA" placeholder="INDRA" maxlength="10" style="text-transform: uppercase; font-family: monospace;">
+              </div>
+              <div class="field">
+                <label for="licGenCount">Quantity (1-20)</label>
+                <input id="licGenCount" type="number" min="1" max="20" value="1">
+              </div>
+            </div>
+            <button id="btnSubmitGenLicense" class="btn btn-blurple" type="submit">✨ Generate Key(s)</button>
+          </form>
+          <div id="genKeyResultAlert" class="alert alert-info" style="display: none; margin-top: 14px; word-break: break-all;"></div>
+        </section>
+
+        <!-- Card: Discord Alert Webhook & Storage Purge -->
+        <section class="card">
+          <div class="card-head">
+            <h3>📢 System Webhook &amp; Zero-Storage</h3>
+            <p class="muted small">Receive instant alerts when friends register, and clean cached uploads to save server space.</p>
+          </div>
+          <form id="formAdminWebhook" style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px;">
+            <div class="field">
+              <label for="adminWebhookUrl">Discord Webhook URL</label>
+              <input id="adminWebhookUrl" type="url" placeholder="https://discord.com/api/webhooks/...">
+            </div>
+            <div class="row" style="gap: 10px;">
+              <button id="btnSaveAdminWebhook" class="btn btn-ghost" type="button">Save Webhook</button>
+              <button id="btnTestAdminWebhook" class="btn btn-ghost" type="button">Test Ping</button>
+            </div>
+          </form>
+
+          <div style="padding-top: 14px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div>
+              <strong style="font-size: 13.5px; color: #f3f4f6;">Zero-Storage Cache Purge</strong>
+              <p class="muted small" style="margin: 2px 0 0 0;">Wipe temporary upload photos to keep server fast with 0 MB wasted.</p>
+            </div>
+            <button id="btnPurgeUploads" class="btn btn-warn btn-sm" type="button" style="white-space: nowrap;">🧹 Purge Cache</button>
+          </div>
+        </section>
+      </div>
+
+      <!-- Card: User Accounts Table -->
+      <section class="card" style="margin-bottom: 24px;">
+        <div class="card-head">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <h3>👥 Registered Friend Accounts</h3>
+              <p class="muted small">All accounts registered on this server. Each friend has isolated bots, products, and tokens.</p>
+            </div>
+            <span id="adminUsersCountBadge" class="tag tag-blurple">0 users</span>
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border); color: #94a3b8;">
+                <th style="padding: 10px 12px;">User ID</th>
+                <th style="padding: 10px 12px;">Email</th>
+                <th style="padding: 10px 12px;">Role</th>
+                <th style="padding: 10px 12px;">Status</th>
+                <th style="padding: 10px 12px;">License Key</th>
+                <th style="padding: 10px 12px;">Joined</th>
+                <th style="padding: 10px 12px; text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersTableBody">
+              <!-- Dynamically populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Card: License Key Inventory -->
+      <section class="card">
+        <div class="card-head">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <h3>📋 License Keys Inventory</h3>
+              <p class="muted small">Track active, redeemed, and revoked license keys.</p>
+            </div>
+            <span id="adminLicensesCountBadge" class="tag tag-blurple">0 keys</span>
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border); color: #94a3b8;">
+                <th style="padding: 10px 12px;">License Key</th>
+                <th style="padding: 10px 12px;">Status</th>
+                <th style="padding: 10px 12px;">Redeemed By</th>
+                <th style="padding: 10px 12px;">Created</th>
+                <th style="padding: 10px 12px; text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="adminLicensesTableBody">
+              <!-- Dynamically populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
 
   </main>
 
@@ -1264,6 +1401,40 @@
         <button id="modalClose" class="icon-btn" type="button" title="Close">✕</button>
       </div>
       <div id="modalBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: EMOJI & GIF HUB ================= -->
+  <div id="modalEmojiGif" class="modal-back" hidden>
+    <div class="modal" role="dialog" aria-modal="true" style="max-width: 680px; width: 95%;">
+      <div class="modal-head">
+        <h3 style="display: flex; align-items: center; gap: 8px;">
+          <span>✨</span> Emoji &amp; GIF Hub <span class="muted small" style="font-weight: 400;">(Zero-Storage Assets)</span>
+        </h3>
+        <button id="modalEmojiGifClose" class="icon-btn" type="button" title="Close">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 16px 20px;">
+        <div class="tabs" style="margin-bottom: 16px;">
+          <button id="hubTabEmojis" class="tab active" type="button">🎨 Curated Emojis</button>
+          <button id="hubTabGifs" class="tab" type="button">🎬 Direct GIF Banners</button>
+        </div>
+
+        <!-- Emojis View -->
+        <div id="hubViewEmojis">
+          <p class="muted small" style="margin-top: 0;">Click any emoji to copy it to your clipboard for instant pasting into titles, descriptions, and fields.</p>
+          <div id="hubEmojisContainer" style="display: flex; flex-direction: column; gap: 16px;">
+            <!-- Category rows populated by JS -->
+          </div>
+        </div>
+
+        <!-- GIFs View -->
+        <div id="hubViewGifs" style="display: none;">
+          <p class="muted small" style="margin-top: 0;">Direct CDN-hosted GIF URLs. Click <strong>Copy URL</strong> and paste into Banner Image URL or Thumbnail URL for zero-storage embeds!</p>
+          <div id="hubGifsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px;">
+            <!-- GIF cards populated by JS -->
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

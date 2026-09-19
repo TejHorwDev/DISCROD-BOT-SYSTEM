@@ -77,17 +77,20 @@ What this file does:
 import json
 import os
 import re
+import shutil
 import socket
 import threading
 import time
 import uuid
 import zipfile
 from datetime import datetime
+from functools import wraps
 from io import BytesIO
 
 from dotenv import load_dotenv
 from flask import (Flask, jsonify, request, render_template, send_file,
-                   send_from_directory, session, redirect, url_for)
+                   send_from_directory, session, redirect, url_for,
+                   has_request_context)
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
@@ -97,7 +100,6 @@ import fontstyles
 import renderer
 import storage
 import themes
-from storage import load_items, save_items
 
 # Pillow is the app's one image tool: it checks that uploads really are
 # pictures, reads their size, and can shrink huge photos so Discord does
@@ -130,6 +132,18 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 UPLOAD_DIR = os.path.join(DATA_DIR, "uploads")
 ADMIN_FILE = os.path.join(DATA_DIR, "admin.json")
+USERS_FILE = os.path.join(DATA_DIR, "users.json")
+LICENSES_FILE = os.path.join(DATA_DIR, "licenses.json")
+WEBHOOK_FILE = os.path.join(DATA_DIR, "admin_webhook.json")
+
+SEED_LICENSES = [
+    "INDRA-VIP-2026",
+    "INDRA-FRIEND-7788",
+    "INDRA-PRO-9921",
+    "INDRA-CORE-5544",
+    "INDRA-ELITE-1122",
+    "INDRA-NEXUS-3344",
+]
 
 # ---------------------------------------------------------------------------
 # Admin authentication helpers
@@ -163,6 +177,176 @@ def save_admin_credentials(email, new_password=None):
     with open(ADMIN_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
     return data
+
+# ---------------------------------------------------------------------------
+# Multi-tenancy, User and License System
+# ---------------------------------------------------------------------------
+
+def load_licenses():
+    """Load licenses from data/licenses.json or initialize with default seed keys."""
+    if os.path.isfile(LICENSES_FILE):
+        try:
+            with open(LICENSES_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict) and isinstance(data.get("licenses"), list):
+                    return data.get("licenses")
+                if isinstance(data, list):
+                    return data
+        except Exception:
+            pass
+    now = datetime.now().isoformat(timespec="seconds")
+    initial = [
+        {"key": key, "status": "unused", "created_at": now, "used_by": None, "used_by_id": None, "used_at": None}
+        for key in SEED_LICENSES
+    ]
+    save_licenses(initial)
+    return initial
+
+def save_licenses(licenses_list):
+    """Save licenses list to data/licenses.json."""
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(LICENSES_FILE, "w", encoding="utf-8") as f:
+        json.dump({"schema_version": 1, "licenses": licenses_list}, f, indent=2)
+
+def load_users():
+    """Load users from data/users.json or initialize with master admin."""
+    if os.path.isfile(USERS_FILE):
+        try:
+            with open(USERS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict) and isinstance(data.get("users"), list):
+                    return data.get("users")
+                if isinstance(data, list):
+                    return data
+        except Exception:
+            pass
+    admin_creds = get_admin_credentials()
+    now = datetime.now().isoformat(timespec="seconds")
+    initial = [
+        {
+            "id": "admin",
+            "email": str(admin_creds.get("email", "admin@indra.gg")).lower(),
+            "password_hash": admin_creds.get("password_hash"),
+            "role": "admin",
+            "status": "active",
+            "license_key": "MASTER-KEY",
+            "created_at": now,
+            "last_login": now,
+        }
+    ]
+    save_users(initial)
+    return initial
+
+def save_users(users_list):
+    """Save users list to data/users.json."""
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(USERS_FILE, "w", encoding="utf-8") as f:
+        json.dump({"schema_version": 1, "users": users_list}, f, indent=2)
+
+def get_user_by_id(uid):
+    """Find a user dict by id from users.json."""
+    if not uid:
+        return None
+    for u in load_users():
+        if u.get("id") == uid:
+            return u
+    return None
+
+def current_user():
+    """Return dict of current logged-in user or None."""
+    if not has_request_context() or not session.get("authenticated"):
+        return None
+    uid = session.get("user_id")
+    if uid:
+        u = get_user_by_id(uid)
+        if u:
+            return u
+    if session.get("role") == "admin" or session.get("admin_email"):
+        return {
+            "id": "admin",
+            "email": session.get("admin_email") or session.get("email") or "admin@indra.gg",
+            "role": "admin",
+            "status": "active"
+        }
+    return None
+
+def current_user_id():
+    """Current user id or None."""
+    u = current_user()
+    return u.get("id") if u else None
+
+def is_admin():
+    """Check if current session user is master admin."""
+    u = current_user()
+    return u.get("role") == "admin" if u else False
+
+def current_user_dir():
+    """Return isolated data directory for current user. Master admin returns None (root data/)."""
+    if not has_request_context():
+        return None
+    u = current_user()
+    if not u or u.get("role") == "admin":
+        return None
+    uid = u.get("id")
+    user_dir = os.path.join(DATA_DIR, "users", uid)
+    os.makedirs(user_dir, exist_ok=True)
+    return user_dir
+
+def admin_required(f):
+    """Decorator to protect routes that require master admin privileges."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not is_admin():
+            return jsonify({"ok": False, "error": "Forbidden: Master Admin privileges required."}), 403
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Override load_items and save_items to automatically scope to user directory!
+def load_items(filename, base_dir=None):
+    if base_dir is None:
+        base_dir = current_user_dir()
+    return storage.load_items(filename, base_dir=base_dir)
+
+def save_items(filename, items, base_dir=None):
+    if base_dir is None:
+        base_dir = current_user_dir()
+    return storage.save_items(filename, items, base_dir=base_dir)
+
+# Rate limiting for Discord sends: 2.5 seconds cooldown per user
+USER_LAST_SEND = {}
+
+def check_send_rate_limit():
+    """Enforce a 2.5 second cooldown per user on Discord dispatch to avoid hitting rate limits."""
+    uid = current_user_id() or "admin"
+    now = time.time()
+    last_time = USER_LAST_SEND.get(uid, 0)
+    cooldown = 2.5
+    if now - last_time < cooldown:
+        remaining = round(cooldown - (now - last_time), 1)
+        return jsonify({
+            "ok": False,
+            "error": f"⚡ Rate limit: Please wait {remaining}s before sending again to protect against Discord rate limits.",
+            "error_kind": "rate_limited"
+        }), 429
+    USER_LAST_SEND[uid] = now
+    return None
+
+def send_admin_webhook_alert(content):
+    """Helper to dispatch alerts to master Discord webhook if configured."""
+    try:
+        doc = storage.load_doc("admin_webhook.json")
+        webhook_url = doc.get("webhook_url", "").strip()
+        if not webhook_url or not webhook_url.startswith("https://discord.com/api/webhooks/"):
+            return
+        import urllib.request
+        req = urllib.request.Request(
+            webhook_url,
+            data=json.dumps({"content": content}).encode("utf-8"),
+            headers={"Content-Type": "application/json", "User-Agent": "IndraBotSystem/2.0"}
+        )
+        urllib.request.urlopen(req, timeout=4)
+    except Exception:
+        pass
 
 # ---------------------------------------------------------------------------
 # Data files - created automatically (and safely) on first run in data/
@@ -357,27 +541,40 @@ def mark_missed_schedules():
             save_items("schedules.json", schedules)
 
 
-def ensure_data_files():
-    """On first run, create the data/ folder and the starter files."""
+def ensure_data_files(base_dir=None):
+    """On first run or user account creation, create the data folder and starter files."""
     storage.ensure_data_files({
         "products.json": lambda: {"schema_version": 3, "items": _starter_products()},
         "settings.json": lambda: {"schema_version": 2, **DEFAULT_SETTINGS},
         "history.json": lambda: {"schema_version": 2, "items": []},
         "schedules.json": lambda: {"schema_version": 2, "items": []},
         "sections.json": lambda: {"schema_version": 1, "items": _starter_sections()},
-    })
-    themes.ensure_themes()          # data/themes.json + the 12 built-ins
-    mark_missed_schedules()
+        "links.json": lambda: {"schema_version": 1, "items": []},
+        "vouches.json": lambda: {"schema_version": 1, "items": []},
+    }, base_dir=base_dir)
+    themes.ensure_themes(base_dir=base_dir)          # data/themes.json + the 12 built-ins
+    bots.ensure_registry(base_dir=base_dir)
+    if base_dir is None:
+        mark_missed_schedules()
 
 
-def get_settings():
+def get_settings(base_dir=None):
     """Read settings.json and fill in defaults for anything missing."""
-    saved = storage.load_doc("settings.json")
+    if base_dir is None:
+        base_dir = current_user_dir()
+    saved = storage.load_doc("settings.json", base_dir=base_dir)
     merged = dict(DEFAULT_SETTINGS)
     if isinstance(saved, dict):
         saved.pop("schema_version", None)      # bookkeeping, not a setting
         merged.update(saved)
     return merged
+
+
+def save_settings(settings, base_dir=None):
+    """Save settings.json for current user or given base_dir."""
+    if base_dir is None:
+        base_dir = current_user_dir()
+    storage.save_doc("settings.json", settings, base_dir=base_dir)
 
 
 # ---------------------------------------------------------------------------
@@ -387,6 +584,8 @@ def get_settings():
 _migration_report = storage.run_migrations()    # backup happens inside, if needed
 bots.ensure_registry()                         # DISCORD_TOKEN becomes bot #1
 ensure_data_files()                             # data files + themes + sections
+load_licenses()                                 # ensure licenses.json exists with seed keys
+load_users()                                    # ensure users.json exists
 
 if _migration_report["migrated"] or _migration_report["backup"]:
     print("  Data files upgraded to the current format.")
@@ -404,7 +603,7 @@ if _migration_report["migrated"] or _migration_report["backup"]:
 def require_authentication():
     """Protect all dashboard routes and APIs. Unauthenticated users are redirected to /login or receive 401."""
     path = request.path
-    if (path in ("/login", "/logout") or
+    if (path in ("/login", "/logout", "/register") or
         path.startswith("/static/") or
         path == "/favicon.ico"):
         return None
@@ -413,12 +612,112 @@ def require_authentication():
         if path.startswith("/api/"):
             return jsonify({"ok": False, "error": "Unauthorized. Please log in.", "unauthorized": True}), 401
         return redirect("/login")
+
+    # Check if user account was suspended or deleted by admin
+    uid = session.get("user_id")
+    if uid and uid != "admin":
+        user = get_user_by_id(uid)
+        if not user or user.get("status") == "suspended":
+            session.clear()
+            if path.startswith("/api/"):
+                return jsonify({"ok": False, "error": "Your account has been suspended by the administrator.", "unauthorized": True}), 403
+            return redirect("/login")
+
     return None
+
+
+@app.get("/register")
+def register_page():
+    """Show the one-time license key registration page."""
+    if session.get("authenticated"):
+        return redirect("/")
+    return render_template("register.html")
+
+
+@app.post("/register")
+def register_submit():
+    """Redeem a one-time license key and create an isolated user account."""
+    data = request.get_json(silent=True) or request.form or {}
+    key_input = str(data.get("license_key") or "").strip().upper()
+    email = str(data.get("email") or "").strip().lower()
+    password = str(data.get("password") or "")
+    confirm_pwd = str(data.get("confirm_password") or "")
+
+    def fail(msg, code=400):
+        if request.is_json:
+            return jsonify({"ok": False, "error": msg}), code
+        return render_template("register.html", error=msg), code
+
+    if not key_input:
+        return fail("Please enter a valid license key.")
+    if not email or "@" not in email:
+        return fail("Please enter a valid email address.")
+    if not password or len(password) < 6:
+        return fail("Password must be at least 6 characters long.")
+    if confirm_pwd and password != confirm_pwd:
+        return fail("Passwords do not match.")
+
+    licenses = load_licenses()
+    matched_lic = None
+    for lic in licenses:
+        if lic.get("key", "").upper() == key_input:
+            matched_lic = lic
+            break
+
+    if not matched_lic:
+        return fail("Invalid license key. Please check with your administrator.")
+    if matched_lic.get("status") != "unused":
+        return fail(f"This license key has already been redeemed by {matched_lic.get('used_by', 'another user')}.")
+
+    users = load_users()
+    for u in users:
+        if str(u.get("email", "")).lower() == email:
+            return fail("An account with this email address already exists.")
+
+    user_id = "u_" + uuid.uuid4().hex[:8]
+    now = datetime.now().isoformat(timespec="seconds")
+
+    matched_lic["status"] = "used"
+    matched_lic["used_by"] = email
+    matched_lic["used_by_id"] = user_id
+    matched_lic["used_at"] = now
+    save_licenses(licenses)
+
+    new_user = {
+        "id": user_id,
+        "email": email,
+        "password_hash": generate_password_hash(password),
+        "role": "user",
+        "status": "active",
+        "license_key": key_input,
+        "created_at": now,
+        "last_login": now,
+    }
+    users.append(new_user)
+    save_users(users)
+
+    # Initialize isolated user folder
+    user_dir = os.path.join(DATA_DIR, "users", user_id)
+    os.makedirs(user_dir, exist_ok=True)
+    ensure_data_files(base_dir=user_dir)
+
+    # Set session
+    session["authenticated"] = True
+    session["user_id"] = user_id
+    session["email"] = email
+    session["role"] = "user"
+
+    # Send admin alert
+    send_admin_webhook_alert(f"🎉 **New Friend Registered!**\n- **Email:** `{email}`\n- **User ID:** `{user_id}`\n- **License Key:** `{key_input}`\n- **Time:** `{now}`")
+
+    if request.is_json:
+        return jsonify({"ok": True, "user": {"id": user_id, "email": email, "role": "user"}})
+    return redirect("/")
 
 
 @app.get("/login")
 def login_page():
-    """Show the admin login screen."""
+    """Show the login screen."""
     if session.get("authenticated"):
         return redirect("/")
     return render_template("login.html")
@@ -426,30 +725,60 @@ def login_page():
 
 @app.post("/login")
 def login_submit():
-    """Verify admin email and password."""
+    """Verify admin or friend user email and password."""
     data = request.get_json(silent=True) or request.form or {}
     email = str(data.get("email") or "").strip().lower()
     password = str(data.get("password") or "")
 
+    # 1. Check root admin
     creds = get_admin_credentials()
     admin_email = str(creds.get("email") or "").strip().lower()
     pwd_hash = creds.get("password_hash", "")
     env_password = (os.getenv("ADMIN_PASSWORD") or "").strip()
 
-    valid = (email == admin_email and (
+    is_root_admin = (email == admin_email and (
         check_password_hash(pwd_hash, password) or (env_password and password == env_password)
     ))
 
-    if valid:
+    if is_root_admin:
         session["authenticated"] = True
+        session["user_id"] = "admin"
         session["admin_email"] = creds.get("email")
+        session["email"] = creds.get("email")
+        session["role"] = "admin"
         if request.is_json:
-            return jsonify({"ok": True, "email": creds.get("email")})
+            return jsonify({"ok": True, "email": creds.get("email"), "role": "admin"})
         return redirect("/")
 
+    # 2. Check registered users in users.json
+    users = load_users()
+    matched_user = None
+    for u in users:
+        if str(u.get("email", "")).lower() == email:
+            matched_user = u
+            break
+
+    if matched_user:
+        if matched_user.get("status") == "suspended":
+            if request.is_json:
+                return jsonify({"ok": False, "error": "Your account has been suspended by the administrator."}), 403
+            return render_template("login.html", error="Your account has been suspended by the administrator."), 403
+
+        if check_password_hash(matched_user.get("password_hash", ""), password):
+            matched_user["last_login"] = datetime.now().isoformat(timespec="seconds")
+            save_users(users)
+
+            session["authenticated"] = True
+            session["user_id"] = matched_user["id"]
+            session["email"] = matched_user["email"]
+            session["role"] = matched_user.get("role", "user")
+            if request.is_json:
+                return jsonify({"ok": True, "email": matched_user["email"], "role": session["role"]})
+            return redirect("/")
+
     if request.is_json:
-        return jsonify({"ok": False, "error": "Invalid admin email or password."}), 401
-    return render_template("login.html", error="Invalid admin email or password."), 401
+        return jsonify({"ok": False, "error": "Invalid email or password."}), 401
+    return render_template("login.html", error="Invalid email or password."), 401
 
 
 @app.route("/logout", methods=["GET", "POST"])
@@ -461,30 +790,70 @@ def logout():
 
 @app.get("/api/auth/me")
 def api_auth_me():
-    """Return currently logged-in admin status and email."""
-    creds = get_admin_credentials()
+    """Return currently logged-in user status, id, email, and role."""
+    u = current_user()
+    if not u:
+        return jsonify({"ok": True, "authenticated": False, "role": "guest"})
     return jsonify({
         "ok": True,
-        "authenticated": bool(session.get("authenticated")),
-        "email": session.get("admin_email") or creds.get("email")
+        "authenticated": True,
+        "logged_in": True,
+        "user_id": u.get("id"),
+        "email": u.get("email"),
+        "role": u.get("role", "user"),
+        "user": {
+            "id": u.get("id"),
+            "email": u.get("email"),
+            "role": u.get("role", "user")
+        }
     })
 
 
 @app.post("/api/auth/update-credentials")
 def api_auth_update():
-    """Allow logged-in admin to update email and password."""
+    """Allow logged-in admin or user to update email and password."""
     data = request.get_json(silent=True) or {}
     current_pwd = str(data.get("current_password") or "")
     new_email = str(data.get("new_email") or "").strip()
     new_pwd = str(data.get("new_password") or "")
 
-    creds = get_admin_credentials()
-    env_password = (os.getenv("ADMIN_PASSWORD") or "").strip()
-    valid_current = (
-        check_password_hash(creds.get("password_hash", ""), current_pwd) or
-        (env_password and current_pwd == env_password)
-    )
-    if not valid_current:
+    u = current_user()
+    if not u:
+        return jsonify({"ok": False, "error": "Not authenticated."}), 401
+
+    if is_admin():
+        creds = get_admin_credentials()
+        env_password = (os.getenv("ADMIN_PASSWORD") or "").strip()
+        valid_current = (
+            check_password_hash(creds.get("password_hash", ""), current_pwd) or
+            (env_password and current_pwd == env_password)
+        )
+        if not valid_current:
+            return jsonify({"ok": False, "error": "Current password is incorrect."}), 400
+
+        if new_email and "@" not in new_email:
+            return jsonify({"ok": False, "error": "Please enter a valid email address."}), 400
+
+        if new_pwd and len(new_pwd) < 6:
+            return jsonify({"ok": False, "error": "New password must be at least 6 characters long."}), 400
+
+        saved = save_admin_credentials(new_email or creds.get("email"), new_pwd if new_pwd else None)
+        session["admin_email"] = saved.get("email")
+        session["email"] = saved.get("email")
+        return jsonify({"ok": True, "email": saved.get("email")})
+
+    # For regular tenant users:
+    users = load_users()
+    target_user = None
+    for item in users:
+        if item.get("id") == u.get("id"):
+            target_user = item
+            break
+
+    if not target_user:
+        return jsonify({"ok": False, "error": "User account not found."}), 404
+
+    if not check_password_hash(target_user.get("password_hash", ""), current_pwd):
         return jsonify({"ok": False, "error": "Current password is incorrect."}), 400
 
     if new_email and "@" not in new_email:
@@ -493,9 +862,246 @@ def api_auth_update():
     if new_pwd and len(new_pwd) < 6:
         return jsonify({"ok": False, "error": "New password must be at least 6 characters long."}), 400
 
-    saved = save_admin_credentials(new_email or creds.get("email"), new_pwd if new_pwd else None)
-    session["admin_email"] = saved.get("email")
-    return jsonify({"ok": True, "email": saved.get("email")})
+    if new_email:
+        target_user["email"] = new_email
+        session["email"] = new_email
+    if new_pwd:
+        target_user["password_hash"] = generate_password_hash(new_pwd)
+
+    save_users(users)
+    return jsonify({"ok": True, "email": target_user["email"]})
+
+
+# ---------------------------------------------------------------------------
+# Admin Hub Endpoints (Master Admin Only)
+# ---------------------------------------------------------------------------
+
+@app.get("/api/admin/users")
+@admin_required
+def api_admin_users_list():
+    """List all registered users and their status."""
+    users = load_users()
+    safe_users = [
+        {
+            "id": u.get("id"),
+            "email": u.get("email"),
+            "role": u.get("role", "user"),
+            "status": u.get("status", "active"),
+            "license_key": u.get("license_key", ""),
+            "created_at": u.get("created_at", ""),
+            "last_login": u.get("last_login", ""),
+        }
+        for u in users
+    ]
+    return jsonify({"ok": True, "users": safe_users})
+
+
+@app.post("/api/admin/users/action")
+@admin_required
+def api_admin_user_action():
+    """Suspend, unsuspend, reset password, or delete user + wipe data."""
+    data = request.get_json(silent=True) or {}
+    action = str(data.get("action") or "").strip()
+    target_id = str(data.get("user_id") or "").strip()
+
+    if not target_id or target_id == "admin":
+        return jsonify({"ok": False, "error": "Cannot modify master admin account."}), 400
+
+    users = load_users()
+    target = None
+    for u in users:
+        if u.get("id") == target_id:
+            target = u
+            break
+
+    if not target:
+        return jsonify({"ok": False, "error": "User not found."}), 404
+
+    if action == "suspend":
+        target["status"] = "suspended"
+        save_users(users)
+        return jsonify({"ok": True, "message": f"User {target['email']} has been suspended."})
+
+    elif action == "unsuspend":
+        target["status"] = "active"
+        save_users(users)
+        return jsonify({"ok": True, "message": f"User {target['email']} has been activated."})
+
+    elif action == "reset_password":
+        new_pwd = str(data.get("new_password") or "").strip()
+        if len(new_pwd) < 6:
+            return jsonify({"ok": False, "error": "Password must be at least 6 characters."}), 400
+        target["password_hash"] = generate_password_hash(new_pwd)
+        save_users(users)
+        return jsonify({"ok": True, "message": f"Password reset for {target['email']}."})
+
+    elif action == "delete":
+        users = [u for u in users if u.get("id") != target_id]
+        save_users(users)
+        user_dir = os.path.join(DATA_DIR, "users", target_id)
+        if os.path.isdir(user_dir):
+            try:
+                shutil.rmtree(user_dir)
+            except Exception:
+                pass
+        return jsonify({"ok": True, "message": f"User {target['email']} and all their data were permanently deleted."})
+
+    return jsonify({"ok": False, "error": "Unknown action."}), 400
+
+
+@app.get("/api/admin/licenses")
+@admin_required
+def api_admin_licenses_list():
+    """List all license keys and their redemption status."""
+    return jsonify({"ok": True, "licenses": load_licenses()})
+
+
+@app.post("/api/admin/licenses")
+@admin_required
+def api_admin_licenses_action():
+    """Generate new license keys or revoke an unused key."""
+    data = request.get_json(silent=True) or {}
+    action = str(data.get("action") or "generate").strip()
+
+    licenses = load_licenses()
+    now = datetime.now().isoformat(timespec="seconds")
+
+    if action == "generate":
+        custom_key = str(data.get("key") or "").strip().upper()
+        if custom_key:
+            if any(l.get("key", "").upper() == custom_key for l in licenses):
+                return jsonify({"ok": False, "error": f"License key {custom_key} already exists."}), 400
+            lic_entry = {
+                "key": custom_key,
+                "status": "unused",
+                "created_at": now,
+                "used_by": None,
+                "used_by_id": None,
+                "used_at": None,
+            }
+            licenses.append(lic_entry)
+            save_licenses(licenses)
+            return jsonify({"ok": True, "created": [custom_key], "licenses": licenses})
+
+        prefix = str(data.get("prefix") or "INDRA").strip().upper()[:10] or "INDRA"
+        try:
+            count = min(max(int(data.get("count", 1)), 1), 20)
+        except Exception:
+            count = 1
+        created_keys = []
+        for _ in range(count):
+            rand_code = uuid.uuid4().hex[:4].upper() + "-" + uuid.uuid4().hex[:4].upper()
+            new_key = f"{prefix}-{rand_code}"
+            lic_entry = {
+                "key": new_key,
+                "status": "unused",
+                "created_at": now,
+                "used_by": None,
+                "used_by_id": None,
+                "used_at": None,
+            }
+            licenses.append(lic_entry)
+            created_keys.append(new_key)
+        save_licenses(licenses)
+        return jsonify({"ok": True, "created": created_keys, "licenses": licenses})
+
+    elif action == "revoke":
+        target_key = str(data.get("key") or "").strip().upper()
+        for lic in licenses:
+            if lic.get("key", "").upper() == target_key:
+                if lic.get("status") == "used":
+                    return jsonify({"ok": False, "error": "Cannot revoke a key that has already been redeemed."}), 400
+                lic["status"] = "revoked"
+                save_licenses(licenses)
+                return jsonify({"ok": True, "message": f"License {target_key} revoked."})
+        return jsonify({"ok": False, "error": "License key not found."}), 404
+
+    return jsonify({"ok": False, "error": "Unknown action."}), 400
+
+
+@app.get("/api/admin/webhook")
+@admin_required
+def api_admin_webhook_get():
+    """Get configured Discord alert webhook."""
+    doc = storage.load_doc("admin_webhook.json")
+    return jsonify({"ok": True, "webhook_url": doc.get("webhook_url", "")})
+
+
+@app.post("/api/admin/webhook")
+@admin_required
+def api_admin_webhook_set():
+    """Save or test Discord alert webhook."""
+    data = request.get_json(silent=True) or {}
+    webhook_url = str(data.get("webhook_url") or "").strip()
+    storage.save_doc("admin_webhook.json", {"webhook_url": webhook_url})
+
+    if data.get("test") and webhook_url:
+        import urllib.request
+        try:
+            req = urllib.request.Request(
+                webhook_url,
+                data=json.dumps({"content": "👑 **INDRA BOT SYSTEM Admin Alert** connected successfully!"}).encode("utf-8"),
+                headers={"Content-Type": "application/json", "User-Agent": "IndraBotSystem/2.0"}
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                pass
+            return jsonify({"ok": True, "message": "Test ping sent to Discord webhook successfully!"})
+        except Exception as e:
+            return jsonify({"ok": False, "error": f"Webhook test failed: {str(e)}"}), 400
+
+    return jsonify({"ok": True, "webhook_url": webhook_url})
+
+
+@app.post("/api/admin/purge-uploads")
+@admin_required
+def api_admin_purge_uploads():
+    """Purge temporary uploads cache to guarantee zero storage waste and maximum speed."""
+    freed_bytes = 0
+    count = 0
+    if os.path.isdir(UPLOAD_DIR):
+        for name in os.listdir(UPLOAD_DIR):
+            fpath = os.path.join(UPLOAD_DIR, name)
+            if os.path.isfile(fpath):
+                try:
+                    freed_bytes += os.path.getsize(fpath)
+                    os.remove(fpath)
+                    count += 1
+                except OSError:
+                    pass
+    mb_freed = round(freed_bytes / (1024 * 1024), 2)
+    return jsonify({"ok": True, "files_deleted": count, "mb_freed": mb_freed, "message": f"Purged {count} cached files, freed {mb_freed} MB."})
+
+
+# ---------------------------------------------------------------------------
+# Zero-Storage Emoji & GIF Hub APIs
+# ---------------------------------------------------------------------------
+
+@app.get("/api/emojis-hub")
+def api_emojis_hub():
+    """Curated emojis for shop, gaming, crypto, social, and announcement embeds."""
+    categories = {
+        "Shop & Sales": ["💰", "💎", "🛒", "🏷️", "💳", "📦", "🎁", "🔥", "⚡", "⭐", "✨", "🎉", "🚀", "💥", "🏆", "👑"],
+        "Status & Alerts": ["✅", "🟢", "🟡", "🔴", "⚠️", "⛔", "🔒", "📢", "🔔", "📌", "ℹ️", "🛡️", "🎯", "🌟", "💡", "📈"],
+        "Gaming & Tech": ["🎮", "🕹️", "💻", "⌨️", "🖥️", "⚡", "👾", "🤖", "🌐", "🔗", "⚙️", "🔧", "🔋", "🔑", "🛰️", "🚀"],
+        "Social & Reaction": ["❤️", "💬", "👋", "🤝", "🔥", "💯", "😎", "🥳", "👀", "🙌", "👑", "✨", "💫", "🌟", "🤩", "🚀"]
+    }
+    return jsonify({"ok": True, "emojis": categories})
+
+
+@app.get("/api/gifs-hub")
+def api_gifs_hub():
+    """Curated zero-storage direct GIF URLs for banners, sales, and welcome embeds."""
+    gifs = [
+        {"title": "Neon Cyber Grid", "url": "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif", "category": "Tech"},
+        {"title": "Anime Sale Banner", "url": "https://media.giphy.com/media/3o7TKSjRrfIPjeiVyM/giphy.gif", "category": "Sales"},
+        {"title": "Electric Glow Line", "url": "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif", "category": "Divider"},
+        {"title": "Fireworks Sparkles", "url": "https://media.giphy.com/media/26tOZ42Mg6pbTUPHW/giphy.gif", "category": "Celebration"},
+        {"title": "Discord Nitro Wave", "url": "https://media.giphy.com/media/ule4akeEDWAYJJWTdQ/giphy.gif", "category": "Gaming"},
+        {"title": "Retro Vaporwave Sunset", "url": "https://media.giphy.com/media/L1R1tvI9svkIWwpVYr/giphy.gif", "category": "Aesthetic"},
+        {"title": "Gold Coins Rain", "url": "https://media.giphy.com/media/67ThRZlYBvibtdF9UC/giphy.gif", "category": "Crypto/Shop"},
+        {"title": "Welcome Wave", "url": "https://media.giphy.com/media/ASd0Ukj0BC5roG5Lmp/giphy.gif", "category": "Welcome"}
+    ]
+    return jsonify({"ok": True, "gifs": gifs})
 
 
 # ---------------------------------------------------------------------------
@@ -520,7 +1126,7 @@ def _requested_bot_id():
     from_query = (request.args.get("bot") or "").strip()
     if from_query:
         return from_query
-    return get_settings().get("active_bot_id") or bots.default_bot_id()
+    return get_settings().get("active_bot_id") or bots.default_bot_id(base_dir=current_user_dir())
 
 
 def _bot_or_error(bot_id=None):
@@ -533,12 +1139,13 @@ def _bot_or_error(bot_id=None):
     instead of a different bot silently posting the message. Only an
     empty request falls back to the active/default bot.
     """
+    ud = current_user_dir()
     bot_id = (bot_id or "").strip() or _requested_bot_id()
-    record = bots.resolve_bot(bot_id, strict=bool(bot_id))
+    record = bots.resolve_bot(bot_id, strict=bool(bot_id), base_dir=ud)
 
     if record is None:
         # an explicit id that is unknown or disabled -> say which and why
-        known = bots.get_bot_record(bot_id) if bot_id else None
+        known = bots.get_bot_record(bot_id, base_dir=ud) if bot_id else None
         if not bot_id:
             return None, None, (jsonify({
                 "ok": False,
@@ -561,16 +1168,14 @@ def _bot_or_error(bot_id=None):
             "error_kind": "unknown_bot",
         }), 400)
 
-    if not bots.read_token(record):
+    if not bots.read_token(record, base_dir=ud):
         return None, None, (jsonify({
             "ok": False,
-            "error": (f"{record.get('display_name', 'The bot')} has no token in the "
-                      f".env file (key {record.get('token_env_var', '?')}). Paste a "
-                      "token there and restart the app - or remove the bot and "
-                      "add it again from the Bots page."),
+            "error": (f"{record.get('display_name', 'The bot')} has no token configured. "
+                      "Open the Bots page and paste a valid bot token."),
             "error_kind": "no_token",
         }), 400)
-    return record, bots.get_client(record["id"]), None
+    return record, bots.get_client(record["id"], base_dir=ud), None
 
 
 def _bot_error_response(error):
@@ -595,8 +1200,9 @@ def api_status():
     or
       { "connected": false, "error": "plain-English problem + fix" }
     """
+    ud = current_user_dir()
     bot_id = (request.args.get("bot") or "").strip() or _requested_bot_id()
-    record = bots.get_bot_record(bot_id) if bot_id else bots.resolve_bot(None)
+    record = bots.get_bot_record(bot_id, base_dir=ud) if bot_id else bots.resolve_bot(None, base_dir=ud)
 
     if record is None:
         return jsonify({
@@ -607,18 +1213,16 @@ def api_status():
             "error_kind": "no_bot",
         })
 
-    if not bots.read_token(record):
+    if not bots.read_token(record, base_dir=ud):
         return jsonify({
             "connected": False, "bot": None, "bot_id": record.get("id"),
-            "error": (f"{record.get('display_name', 'The bot')} has no token in .env "
-                      f"(key {record.get('token_env_var', '?')}). Add the token to the "
-                      ".env file and restart the app, or remove and re-add the bot "
-                      "from the Bots page."),
+            "error": (f"{record.get('display_name', 'The bot')} has no token configured. "
+                      "Open the Bots page and add the bot token."),
             "error_kind": "no_token",
         })
 
     try:
-        client = bots.get_client(record["id"])
+        client = bots.get_client(record["id"], base_dir=ud)
         me = client.get_me()
         return jsonify({
             "connected": True,
@@ -645,7 +1249,7 @@ def api_status():
 @app.get("/api/bots")
 def api_bots_list():
     """Every registered bot, with the token replaced by a '••••last4' hint."""
-    return jsonify({"ok": True, "bots": bots.list_bots()})
+    return jsonify({"ok": True, "bots": bots.list_bots(base_dir=current_user_dir())})
 
 
 @app.post("/api/bots")
@@ -655,16 +1259,12 @@ def api_bots_add():
       display_name, kind ("seller" | "messenger" | "custom"),
       token (pasted by the user), allow_everyone (invite permissions),
       notes (optional).
-
-    The token is validated against Discord FIRST. If it works, it is
-    written to .env and never appears in any answer - only the masked
-    hint ("••••1234") and the ready-made invite link come back.
     """
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
         return jsonify({"ok": False, "error": "Nothing was sent."}), 400
 
-    display_name = str(data.get("display_name", "")).strip()
+    display_name = str(data.get("display_name") or data.get("name") or "").strip()
     token = str(data.get("token", "")).strip()
     kind = str(data.get("kind", "custom")).strip()
     allow_everyone = bool(data.get("allow_everyone", False))
@@ -679,20 +1279,21 @@ def api_bots_add():
     if _has_broken_characters(data):
         return jsonify({"ok": False, "error": BROKEN_CHARACTERS_MESSAGE}), 400
 
+    ud = current_user_dir()
     try:
         record = bots.add_bot(display_name, kind, token,
-                              allow_everyone=allow_everyone, notes=notes)
+                              allow_everyone=allow_everyone, notes=notes, base_dir=ud)
     except discord_api.DiscordAPIError as error:
         return _bot_error_response(error)
 
     try:
-        invite_url = bots.invite_url_for(record["id"])
+        invite_url = bots.invite_url_for(record["id"], base_dir=ud)
     except (discord_api.DiscordAPIError, KeyError):
-        invite_url = None      # the invite link is a nice-to-have, not a must
+        invite_url = None
 
     return jsonify({
         "ok": True,
-        "bot": record,         # public record - token already masked
+        "bot": record,
         "invite_url": invite_url,
     })
 
@@ -719,7 +1320,7 @@ def api_bots_update(bot_id):
     if _has_broken_characters(changes):
         return jsonify({"ok": False, "error": BROKEN_CHARACTERS_MESSAGE}), 400
 
-    record = bots.update_bot(bot_id, **changes)
+    record = bots.update_bot(bot_id, base_dir=current_user_dir(), **changes)
     if record is None:
         return jsonify({"ok": False, "error": "That bot does not exist."}), 404
     return jsonify({"ok": True, "bot": record})
@@ -730,7 +1331,7 @@ def api_bots_toggle(bot_id):
     """Switch a bot on (usable everywhere) or off (skipped everywhere)."""
     data = request.get_json(silent=True) or {}
     enabled = bool(data.get("enabled", True))
-    record = bots.set_enabled(bot_id, enabled)
+    record = bots.set_enabled(bot_id, enabled, base_dir=current_user_dir())
     if record is None:
         return jsonify({"ok": False, "error": "That bot does not exist."}), 404
     return jsonify({"ok": True, "bot": record})
@@ -738,41 +1339,33 @@ def api_bots_toggle(bot_id):
 
 @app.post("/api/bots/<bot_id>/test")
 def api_bots_test(bot_id):
-    """
-    The "Test connection" button: ask Discord who this bot is RIGHT NOW
-    (a real request, not the cached answer). Also refreshes the avatar
-    shown in the dashboard.
-    """
+    """The 'Test connection' button: ask Discord who this bot is RIGHT NOW."""
+    ud = current_user_dir()
     try:
-        record = bots.test_bot(bot_id)
+        record = bots.test_bot(bot_id, base_dir=ud)
     except KeyError:
         return jsonify({"ok": False, "error": "That bot does not exist."}), 404
     except discord_api.DiscordAPIError as error:
         return _bot_error_response(error)
 
-    # Also report the servers it is in (cached on the server for a minute).
     servers = []
     try:
-        guilds = bots.get_client(bot_id).get_my_guilds()
+        guilds = bots.get_client(bot_id, base_dir=ud).get_my_guilds()
         servers = [{"id": g.get("id"), "name": g.get("name", "?")}
                    for g in guilds]
     except (discord_api.DiscordAPIError, KeyError):
-        pass    # the connection test is the important part
+        pass
 
     return jsonify({"ok": True, "bot": record, "servers": servers})
 
 
 @app.post("/api/bots/<bot_id>/invite")
 def api_bots_invite(bot_id):
-    """
-    Build the invite link for a bot. The body may contain
-    { "allow_everyone": true } to also ask for the Mention Everyone
-    permission; by default the link only asks for what the app needs.
-    """
+    """Build the invite link for a bot."""
     data = request.get_json(silent=True) or {}
     allow_everyone = bool(data.get("allow_everyone", False))
     try:
-        url = bots.invite_url_for(bot_id, allow_everyone)
+        url = bots.invite_url_for(bot_id, allow_everyone, base_dir=current_user_dir())
     except KeyError:
         return jsonify({"ok": False, "error": "That bot does not exist."}), 404
     except discord_api.DiscordAPIError as error:
@@ -782,19 +1375,16 @@ def api_bots_invite(bot_id):
 
 @app.delete("/api/bots/<bot_id>")
 def api_bots_remove(bot_id):
-    """
-    Remove a bot. Its token line is deleted from .env too - except the
-    old DISCORD_TOKEN line, which is kept for backward compatibility
-    (it is simply not used by any bot until you add one again).
-    """
-    if not bots.remove_bot(bot_id):
+    """Remove a bot from the user's registry."""
+    ud = current_user_dir()
+    if not bots.remove_bot(bot_id, base_dir=ud):
         return jsonify({"ok": False, "error": "That bot does not exist."}), 404
 
     # If the removed bot was the active one, fall back to another.
-    settings = get_settings()
+    settings = get_settings(base_dir=ud)
     if settings.get("active_bot_id") == bot_id:
-        settings["active_bot_id"] = bots.default_bot_id()
-        storage.save_doc("settings.json", settings)
+        settings["active_bot_id"] = bots.default_bot_id(base_dir=ud)
+        save_settings(settings, base_dir=ud)
 
     return jsonify({"ok": True})
 
@@ -1518,6 +2108,10 @@ def api_links_delete(link_id):
 @app.post("/api/links/send")
 def api_links_send():
     """Post an aesthetic link directory to Discord with optional interactive button action rows."""
+    rate_err = check_send_rate_limit()
+    if rate_err:
+        return rate_err
+
     data = request.get_json(silent=True) or {}
     channel_id = str(data.get("channel_id") or "").strip()
     bot_id = str(data.get("bot_id") or "").strip()
@@ -1782,7 +2376,7 @@ def api_fontstyles():
 @app.get("/api/themes")
 def api_themes_list():
     """Every theme: the 12 built-ins first, then your custom ones."""
-    return jsonify({"ok": True, "themes": themes.list_themes()})
+    return jsonify({"ok": True, "themes": themes.list_themes(base_dir=current_user_dir())})
 
 
 @app.post("/api/themes")
@@ -1798,7 +2392,8 @@ def api_themes_save():
         return jsonify({"ok": False, "error": BROKEN_CHARACTERS_MESSAGE}), 400
 
     theme, error = themes.save_theme(data["theme"],
-                                     data.get("id") or data["theme"].get("id"))
+                                     data.get("id") or data["theme"].get("id"),
+                                     base_dir=current_user_dir())
     if error:
         return jsonify({"ok": False, "error": error}), 400
     return jsonify({"ok": True, "theme": theme})
@@ -1807,7 +2402,7 @@ def api_themes_save():
 @app.post("/api/themes/<theme_id>/duplicate")
 def api_themes_duplicate(theme_id):
     """Copy any theme (built-ins included) into your own editable one."""
-    theme, error = themes.duplicate_theme(theme_id)
+    theme, error = themes.duplicate_theme(theme_id, base_dir=current_user_dir())
     if error:
         return jsonify({"ok": False, "error": error}), 400
     return jsonify({"ok": True, "theme": theme})
@@ -1816,7 +2411,7 @@ def api_themes_duplicate(theme_id):
 @app.delete("/api/themes/<theme_id>")
 def api_themes_delete(theme_id):
     """Delete a CUSTOM theme (built-ins are part of the app and stay)."""
-    ok, error = themes.delete_theme(theme_id)
+    ok, error = themes.delete_theme(theme_id, base_dir=current_user_dir())
     if not ok:
         return jsonify({"ok": False, "error": error}), 400
     return jsonify({"ok": True})
@@ -2218,7 +2813,7 @@ def render_for_bot(content, record):
     check result["ok"] and result["errors"] before sending.
     """
     content = content if isinstance(content, dict) else {}
-    theme = themes.get_theme(str(content.get("theme_id") or "")) \
+    theme = themes.get_theme(str(content.get("theme_id") or ""), base_dir=current_user_dir()) \
         if content.get("theme_id") else None
     return renderer.render_content(content, bot=_bot_identity(record),
                                    theme=theme, settings=get_settings())
@@ -2413,7 +3008,7 @@ def _render_request_content(data):
 
     bot_id = str(data.get("bot_id", "")).strip() or \
         str(content.get("bot_id", "")).strip()
-    record = bots.resolve_bot(bot_id or None) or {}
+    record = bots.resolve_bot(bot_id or None, base_dir=current_user_dir()) or {}
 
     result = render_for_bot(content, record)
     if not result["ok"]:
@@ -2448,7 +3043,7 @@ def api_preview():
 
     bot_id = str(data.get("bot_id", "")).strip() or \
         str(content.get("bot_id", "")).strip()
-    record = bots.resolve_bot(bot_id or None) or {}
+    record = bots.resolve_bot(bot_id or None, base_dir=current_user_dir()) or {}
 
     result = render_for_bot(content, record)
     return jsonify({
@@ -2475,6 +3070,10 @@ def api_send():
     The server renders it with renderer.py - the same output the preview
     already showed - and posts every message of the auto-split, in order.
     """
+    rate_err = check_send_rate_limit()
+    if rate_err:
+        return rate_err
+
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
         return jsonify({"ok": False, "error": "Nothing was sent."}), 400
@@ -2506,6 +3105,10 @@ def api_send_test():
     Same as /api/send, but posts ONLY to TEST_CHANNEL_ID from the .env file,
     so you can check how the real message looks before the real send.
     """
+    rate_err = check_send_rate_limit()
+    if rate_err:
+        return rate_err
+
     test_channel = os.getenv("TEST_CHANNEL_ID", "").strip()
     if not (test_channel.isdigit() and 15 <= len(test_channel) <= 21):
         return jsonify({"ok": False,

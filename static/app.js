@@ -2044,9 +2044,15 @@ function switchTab(name) {
     tab.classList.toggle("active", active);
     tab.setAttribute("aria-selected", active ? "true" : "false");
   }
-  for (const panel of $$(".tab-panel")) panel.hidden = true;
+  for (const panel of $$(".tab-panel")) {
+    panel.hidden = true;
+    panel.style.display = "none";
+  }
   const panel = $("#tab-" + name);
-  if (panel) panel.hidden = false;
+  if (panel) {
+    panel.hidden = false;
+    panel.style.display = "block";
+  }
 
   /* refresh the data the tab shows */
   if (name === "library") loadLibrary();
@@ -2057,6 +2063,7 @@ function switchTab(name) {
   if (name === "stats") { loadServerStats(); }
   if (name === "vouches") { loadVouches(); }
   if (name === "links") { loadSavedLinks(); syncLinkSenderChannels(); }
+  if (name === "admin") { loadAdminUsers(); loadAdminLicenses(); loadAdminWebhook(); }
   if (name === "schedules") { loadSchedules(); clearInterval(schTimer); schTimer = setInterval(loadSchedules, 15000); }
   else if (schTimer) { clearInterval(schTimer); schTimer = null; }
 
@@ -4664,6 +4671,8 @@ async function init() {
   bindBackupRestore();
   bindAdminSecurity();
   bindLinksTab();
+  bindAdminHub();
+  bindEmojiGifHub();
 
   /* load everything: config -> looks -> settings -> bots -> pickers + lists */
   const configData = await apiGet("/api/config");
@@ -4706,10 +4715,23 @@ function bindAdminSecurity() {
 
   async function loadAdminMe() {
     const res = await apiGet("/api/auth/me");
-    if (res.ok && res.email) {
-      if (emailInput) emailInput.value = res.email;
+    if (res.ok) {
+      state.currentUser = res;
+      if (emailInput && res.email) emailInput.value = res.email;
       const topbarEmail = $("#topbarAdminEmail");
-      if (topbarEmail) topbarEmail.textContent = res.email;
+      if (topbarEmail && res.email) topbarEmail.textContent = res.email;
+
+      const roleBadge = $("#topbarRoleBadge");
+      const tabAdmin = $("#tabAdminBtn");
+      const isAdmin = res.role === "admin";
+
+      if (roleBadge) {
+        roleBadge.textContent = isAdmin ? "Admin" : "Pro User";
+        roleBadge.className = isAdmin ? "tag tag-blurple" : "tag tag-green";
+      }
+      if (tabAdmin) {
+        tabAdmin.style.display = isAdmin ? "inline-flex" : "none";
+      }
     }
   }
   loadAdminMe();
@@ -4740,12 +4762,12 @@ function bindAdminSecurity() {
       saveBtn.textContent = "💾 Update Admin Credentials";
 
       if (res.ok) {
-        showToast("Admin credentials updated successfully!", "success");
+        showToast("Credentials updated successfully!", "success");
         if (currPwdInput) currPwdInput.value = "";
         if (newPwdInput) newPwdInput.value = "";
         if (feedback) {
           feedback.className = "alert alert-success small";
-          feedback.textContent = "Admin credentials updated successfully.";
+          feedback.textContent = "Credentials updated successfully.";
           feedback.style.display = "block";
         }
         const topbarEmail = $("#topbarAdminEmail");
@@ -4753,12 +4775,445 @@ function bindAdminSecurity() {
       } else {
         if (feedback) {
           feedback.className = "alert alert-error small";
-          feedback.textContent = res.error || "Failed to update admin credentials.";
+          feedback.textContent = res.error || "Failed to update credentials.";
           feedback.style.display = "block";
         }
         showToast(res.error || "Update failed", "error");
       }
     });
+  }
+}
+
+/* ==========================================================================
+   PART 16 - Master Admin Control Hub & Emoji/GIF Asset Hub
+   ========================================================================== */
+
+async function loadAdminUsers() {
+  const tableBody = $("#adminUsersTableBody");
+  if (!tableBody) return;
+  tableBody.innerHTML = `<tr><td colspan="7" class="muted" style="padding: 16px; text-align: center;">Loading users...</td></tr>`;
+
+  const res = await apiGet("/api/admin/users");
+  if (!res.ok) {
+    tableBody.innerHTML = `<tr><td colspan="7" class="alert alert-error small" style="padding: 12px;">${res.error || "Failed to load users."}</td></tr>`;
+    return;
+  }
+
+  const users = res.users || [];
+  const badge = $("#adminUsersCountBadge");
+  if (badge) badge.textContent = `${users.length} user${users.length === 1 ? "" : "s"}`;
+
+  if (!users.length) {
+    tableBody.innerHTML = `<tr><td colspan="7" class="muted" style="padding: 16px; text-align: center;">No users registered yet.</td></tr>`;
+    return;
+  }
+
+  tableBody.replaceChildren();
+  for (const u of users) {
+    const tr = el("tr");
+    tr.style.borderBottom = "1px solid rgba(255, 255, 255, 0.05)";
+
+    const isMasterAdmin = u.id === "admin";
+    const statusTag = el("span", u.status === "active" ? "tag tag-green" : "tag tag-red", u.status || "active");
+    statusTag.style.fontSize = "11px";
+    statusTag.style.padding = "2px 8px";
+    statusTag.style.borderRadius = "12px";
+
+    const roleTag = el("span", u.role === "admin" ? "tag tag-blurple" : "tag", u.role || "user");
+    roleTag.style.fontSize = "11px";
+    roleTag.style.padding = "2px 8px";
+    roleTag.style.borderRadius = "12px";
+
+    tr.innerHTML = `
+      <td style="padding: 10px 12px; font-family: monospace; color: #a5b4fc;">${u.id}</td>
+      <td style="padding: 10px 12px; font-weight: 600;">${u.email}</td>
+      <td style="padding: 10px 12px;"></td>
+      <td style="padding: 10px 12px;"></td>
+      <td style="padding: 10px 12px; font-family: monospace; font-size: 12px; color: #cbd5e1;">${u.license_key || "—"}</td>
+      <td style="padding: 10px 12px; font-size: 12px; color: #94a3b8;">${prettyDateTime(u.created_at)}</td>
+      <td style="padding: 10px 12px; text-align: right;"></td>
+    `;
+
+    tr.children[2].appendChild(roleTag);
+    tr.children[3].appendChild(statusTag);
+
+    const actionsTd = tr.children[6];
+    if (isMasterAdmin) {
+      actionsTd.innerHTML = `<span class="muted small" style="font-style: italic;">Protected</span>`;
+    } else {
+      const actionsWrap = el("div", null);
+      actionsWrap.style.display = "inline-flex";
+      actionsWrap.style.gap = "6px";
+      actionsWrap.style.justifyContent = "flex-end";
+
+      // Suspend / Unsuspend button
+      const suspBtn = el("button", u.status === "active" ? "btn btn-warn btn-sm" : "btn btn-blurple btn-sm",
+                         u.status === "active" ? "Suspend" : "Unsuspend");
+      suspBtn.style.padding = "4px 8px";
+      suspBtn.style.fontSize = "11.5px";
+      suspBtn.addEventListener("click", async () => {
+        const action = u.status === "active" ? "suspend" : "unsuspend";
+        const result = await apiSend("/api/admin/users/action", { user_id: u.id, action });
+        if (result.ok) {
+          showToast(result.message || "User status updated.", "success");
+          loadAdminUsers();
+        } else {
+          showToast(result.error || "Action failed.", "error");
+        }
+      });
+      actionsWrap.appendChild(suspBtn);
+
+      // Reset Password button
+      const resetBtn = el("button", "btn btn-ghost btn-sm", "Reset Pwd");
+      resetBtn.style.padding = "4px 8px";
+      resetBtn.style.fontSize = "11.5px";
+      resetBtn.addEventListener("click", async () => {
+        const newPwd = prompt(`Enter new password for ${u.email} (min 6 chars):`);
+        if (!newPwd) return;
+        if (newPwd.length < 6) {
+          showToast("Password must be at least 6 characters.", "error");
+          return;
+        }
+        const result = await apiSend("/api/admin/users/action", {
+          user_id: u.id,
+          action: "reset_password",
+          new_password: newPwd
+        });
+        if (result.ok) {
+          showToast(result.message || "Password updated.", "success");
+        } else {
+          showToast(result.error || "Failed to reset password.", "error");
+        }
+      });
+      actionsWrap.appendChild(resetBtn);
+
+      // Delete button
+      const delBtn = el("button", "btn btn-danger btn-sm", "Delete");
+      delBtn.style.padding = "4px 8px";
+      delBtn.style.fontSize = "11.5px";
+      delBtn.addEventListener("click", async () => {
+        if (!confirm(`Are you sure you want to PERMANENTLY DELETE user ${u.email} and WIPE all their bots, products, and data?`)) return;
+        const result = await apiSend("/api/admin/users/action", { user_id: u.id, action: "delete" });
+        if (result.ok) {
+          showToast(result.message || "User deleted.", "success");
+          loadAdminUsers();
+        } else {
+          showToast(result.error || "Failed to delete user.", "error");
+        }
+      });
+      actionsWrap.appendChild(delBtn);
+
+      actionsTd.appendChild(actionsWrap);
+    }
+
+    tableBody.appendChild(tr);
+  }
+}
+
+async function loadAdminLicenses() {
+  const tableBody = $("#adminLicensesTableBody");
+  if (!tableBody) return;
+  tableBody.innerHTML = `<tr><td colspan="5" class="muted" style="padding: 16px; text-align: center;">Loading license keys...</td></tr>`;
+
+  const res = await apiGet("/api/admin/licenses");
+  if (!res.ok) {
+    tableBody.innerHTML = `<tr><td colspan="5" class="alert alert-error small" style="padding: 12px;">${res.error || "Failed to load licenses."}</td></tr>`;
+    return;
+  }
+
+  const licenses = res.licenses || [];
+  const badge = $("#adminLicensesCountBadge");
+  if (badge) badge.textContent = `${licenses.length} key${licenses.length === 1 ? "" : "s"}`;
+
+  if (!licenses.length) {
+    tableBody.innerHTML = `<tr><td colspan="5" class="muted" style="padding: 16px; text-align: center;">No license keys generated yet.</td></tr>`;
+    return;
+  }
+
+  tableBody.replaceChildren();
+  for (const lic of licenses) {
+    const tr = el("tr");
+    tr.style.borderBottom = "1px solid rgba(255, 255, 255, 0.05)";
+
+    let statusClass = "tag";
+    if (lic.status === "unused") statusClass = "tag tag-green";
+    else if (lic.status === "used") statusClass = "tag tag-blurple";
+    else if (lic.status === "revoked") statusClass = "tag tag-red";
+
+    const statusTag = el("span", statusClass, lic.status || "unused");
+    statusTag.style.fontSize = "11px";
+    statusTag.style.padding = "2px 8px";
+    statusTag.style.borderRadius = "12px";
+
+    tr.innerHTML = `
+      <td style="padding: 10px 12px; font-family: monospace; font-weight: 700; color: #facc15; letter-spacing: 0.05em;">
+        ${lic.key}
+        <button class="icon-btn btn-copy-key" title="Copy Key" style="margin-left: 6px; font-size: 11px; padding: 2px 5px;">📋</button>
+      </td>
+      <td style="padding: 10px 12px;"></td>
+      <td style="padding: 10px 12px; color: #cbd5e1;">${lic.used_by ? `${lic.used_by} <span class="muted small">(${prettyDateTime(lic.used_at)})</span>` : "—"}</td>
+      <td style="padding: 10px 12px; font-size: 12px; color: #94a3b8;">${prettyDateTime(lic.created_at)}</td>
+      <td style="padding: 10px 12px; text-align: right;"></td>
+    `;
+
+    tr.children[1].appendChild(statusTag);
+
+    const copyBtn = tr.querySelector(".btn-copy-key");
+    if (copyBtn) {
+      copyBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(lic.key);
+        showToast(`Copied license key: ${lic.key}`, "success");
+      });
+    }
+
+    const actionsTd = tr.children[4];
+    if (lic.status === "unused") {
+      const revokeBtn = el("button", "btn btn-danger btn-sm", "Revoke");
+      revokeBtn.style.padding = "3px 8px";
+      revokeBtn.style.fontSize = "11px";
+      revokeBtn.addEventListener("click", async () => {
+        if (!confirm(`Revoke unused license key ${lic.key}?`)) return;
+        const resRev = await apiSend("/api/admin/licenses", { action: "revoke", key: lic.key });
+        if (resRev.ok) {
+          showToast(`License ${lic.key} revoked.`, "info");
+          loadAdminLicenses();
+        } else {
+          showToast(resRev.error || "Failed to revoke.", "error");
+        }
+      });
+      actionsTd.appendChild(revokeBtn);
+    } else {
+      actionsTd.innerHTML = `<span class="muted small">—</span>`;
+    }
+
+    tableBody.appendChild(tr);
+  }
+}
+
+async function loadAdminWebhook() {
+  const res = await apiGet("/api/admin/webhook");
+  if (res.ok && res.webhook_url !== undefined) {
+    const input = $("#adminWebhookUrl");
+    if (input) input.value = res.webhook_url;
+  }
+}
+
+function bindAdminHub() {
+  const formGen = $("#formGenLicense");
+  if (formGen) {
+    formGen.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const prefix = $("#licGenPrefix").value.trim().toUpperCase() || "INDRA";
+      const count = parseInt($("#licGenCount").value, 10) || 1;
+      const submitBtn = $("#btnSubmitGenLicense");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Generating...";
+
+      const res = await apiSend("/api/admin/licenses", { action: "generate", prefix, count });
+      submitBtn.disabled = false;
+      submitBtn.textContent = "✨ Generate Key(s)";
+
+      if (res.ok && res.created) {
+        showToast(`Generated ${res.created.length} new license key(s)!`, "success");
+        const alertBox = $("#genKeyResultAlert");
+        if (alertBox) {
+          alertBox.style.display = "block";
+          alertBox.innerHTML = `<strong>Generated Keys (Ready to give to friends):</strong><br><pre style="margin: 6px 0 0 0; padding: 8px; background: rgba(0,0,0,0.4); border-radius: 6px;">${res.created.join("\n")}</pre>`;
+        }
+        loadAdminLicenses();
+      } else {
+        showToast(res.error || "Failed to generate keys.", "error");
+      }
+    });
+  }
+
+  const btnSaveWebhook = $("#btnSaveAdminWebhook");
+  if (btnSaveWebhook) {
+    btnSaveWebhook.addEventListener("click", async () => {
+      const webhook_url = $("#adminWebhookUrl").value.trim();
+      const res = await apiSend("/api/admin/webhook", { webhook_url });
+      if (res.ok) {
+        showToast("Admin webhook saved successfully!", "success");
+      } else {
+        showToast(res.error || "Failed to save webhook.", "error");
+      }
+    });
+  }
+
+  const btnTestWebhook = $("#btnTestAdminWebhook");
+  if (btnTestWebhook) {
+    btnTestWebhook.addEventListener("click", async () => {
+      const webhook_url = $("#adminWebhookUrl").value.trim();
+      if (!webhook_url) {
+        showToast("Please enter a Discord webhook URL first.", "warn");
+        return;
+      }
+      btnTestWebhook.disabled = true;
+      btnTestWebhook.textContent = "Testing...";
+      const res = await apiSend("/api/admin/webhook", { webhook_url, test: true });
+      btnTestWebhook.disabled = false;
+      btnTestWebhook.textContent = "Test Ping";
+
+      if (res.ok) {
+        showToast(res.message || "Test ping sent to Discord successfully!", "success");
+      } else {
+        showToast(res.error || "Test ping failed.", "error");
+      }
+    });
+  }
+
+  const btnPurge = $("#btnPurgeUploads");
+  if (btnPurge) {
+    btnPurge.addEventListener("click", async () => {
+      if (!confirm("Are you sure you want to purge all temporary image uploads to free up disk space?")) return;
+      btnPurge.disabled = true;
+      btnPurge.textContent = "Purging...";
+      const res = await apiSend("/api/admin/purge-uploads", {});
+      btnPurge.disabled = false;
+      btnPurge.textContent = "🧹 Purge Cache";
+
+      if (res.ok) {
+        showToast(res.message || `Purged ${res.files_deleted} files, freed ${res.mb_freed} MB!`, "success");
+      } else {
+        showToast(res.error || "Purge failed.", "error");
+      }
+    });
+  }
+
+  const btnRefresh = $("#btnRefreshAdminData");
+  if (btnRefresh) {
+    btnRefresh.addEventListener("click", () => {
+      loadAdminUsers();
+      loadAdminLicenses();
+      loadAdminWebhook();
+      showToast("Admin Hub data refreshed.", "info");
+    });
+  }
+}
+
+function bindEmojiGifHub() {
+  const openBtn = $("#openEmojiGifHubBtn");
+  const modal = $("#modalEmojiGif");
+  const closeBtn = $("#modalEmojiGifClose");
+  const tabEmojis = $("#hubTabEmojis");
+  const tabGifs = $("#hubTabGifs");
+  const viewEmojis = $("#hubViewEmojis");
+  const viewGifs = $("#hubViewGifs");
+
+  if (!modal) return;
+
+  function openHub() {
+    modal.hidden = false;
+    modal.style.display = "flex";
+    loadHubContent();
+  }
+
+  function closeHub() {
+    modal.hidden = true;
+    modal.style.display = "none";
+  }
+
+  if (openBtn) openBtn.addEventListener("click", openHub);
+  if (closeBtn) closeBtn.addEventListener("click", closeHub);
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeHub();
+  });
+
+  if (tabEmojis && tabGifs) {
+    tabEmojis.addEventListener("click", () => {
+      tabEmojis.classList.add("active");
+      tabGifs.classList.remove("active");
+      viewEmojis.style.display = "block";
+      viewGifs.style.display = "none";
+    });
+    tabGifs.addEventListener("click", () => {
+      tabGifs.classList.add("active");
+      tabEmojis.classList.remove("active");
+      viewEmojis.style.display = "none";
+      viewGifs.style.display = "block";
+    });
+  }
+
+  let hubLoaded = false;
+  async function loadHubContent() {
+    if (hubLoaded) return;
+    hubLoaded = true;
+
+    // Load Emojis
+    const emojiRes = await apiGet("/api/emojis-hub");
+    const emojiContainer = $("#hubEmojisContainer");
+    if (emojiRes.ok && emojiRes.emojis && emojiContainer) {
+      emojiContainer.replaceChildren();
+      for (const [category, emojis] of Object.entries(emojiRes.emojis)) {
+        const catBox = el("div", "emoji-category");
+        const title = el("strong", null, category);
+        title.style.display = "block";
+        title.style.marginBottom = "8px";
+        title.style.fontSize = "12.5px";
+        title.style.color = "#94a3b8";
+        catBox.appendChild(title);
+
+        const chipsWrap = el("div", null);
+        chipsWrap.style.display = "flex";
+        chipsWrap.style.flexWrap = "wrap";
+        chipsWrap.style.gap = "8px";
+
+        for (const emoji of emojis) {
+          const btn = el("button", "btn btn-ghost btn-sm", emoji);
+          btn.type = "button";
+          btn.style.fontSize = "18px";
+          btn.style.padding = "6px 10px";
+          btn.style.borderRadius = "8px";
+          btn.style.lineHeight = "1";
+          btn.style.background = "rgba(255, 255, 255, 0.04)";
+          btn.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+          btn.addEventListener("click", () => {
+            navigator.clipboard.writeText(emoji);
+            showToast(`Copied ${emoji} to clipboard!`, "success");
+          });
+          chipsWrap.appendChild(btn);
+        }
+        catBox.appendChild(chipsWrap);
+        emojiContainer.appendChild(catBox);
+      }
+    }
+
+    // Load GIFs
+    const gifRes = await apiGet("/api/gifs-hub");
+    const gifContainer = $("#hubGifsContainer");
+    if (gifRes.ok && gifRes.gifs && gifContainer) {
+      gifContainer.replaceChildren();
+      for (const gif of gifRes.gifs) {
+        const card = el("div", "card", null);
+        card.style.padding = "10px";
+        card.style.background = "rgba(15, 17, 23, 0.7)";
+        card.style.border = "1px solid rgba(255, 255, 255, 0.08)";
+        card.style.borderRadius = "10px";
+        card.style.display = "flex";
+        card.style.flexDirection = "column";
+        card.style.gap = "8px";
+
+        card.innerHTML = `
+          <div style="height: 90px; border-radius: 6px; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center;">
+            <img src="${gif.url}" alt="${gif.title}" style="width: 100%; height: 100%; object-fit: cover;" loading="lazy">
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 12px; font-weight: 600; color: #f1f5f9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${gif.title}</span>
+            <span class="tag" style="font-size: 10px; padding: 1px 6px;">${gif.category}</span>
+          </div>
+          <button class="btn btn-blurple btn-sm" type="button" style="width: 100%; padding: 4px; font-size: 11.5px;">📋 Copy URL</button>
+        `;
+
+        const copyBtn = card.querySelector("button");
+        copyBtn.addEventListener("click", () => {
+          navigator.clipboard.writeText(gif.url);
+          showToast(`Copied GIF URL for "${gif.title}"!`, "success");
+        });
+
+        gifContainer.appendChild(card);
+      }
+    }
   }
 }
 

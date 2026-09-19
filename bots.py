@@ -65,9 +65,9 @@ def _empty_registry():
     return {"schema_version": 1, "bots": []}
 
 
-def load_registry():
+def load_registry(base_dir=None):
     """Read bots.json (or an empty registry on first run)."""
-    data = load_json(REGISTRY_FILE, None)
+    data = load_json(REGISTRY_FILE, None, base_dir=base_dir)
     if isinstance(data, dict) and isinstance(data.get("bots"), list):
         return data
     if isinstance(data, list):          # future-proof: a bare list of bots
@@ -75,14 +75,14 @@ def load_registry():
     return _empty_registry()
 
 
-def save_registry(registry):
+def save_registry(registry, base_dir=None):
     """Save bots.json the safe way (atomic write, file lock)."""
-    save_json(REGISTRY_FILE, registry)
+    save_json(REGISTRY_FILE, registry, base_dir=base_dir)
 
 
-def _records(registry=None):
+def _records(registry=None, base_dir=None):
     """The bot records as a list (from the given or freshly loaded registry)."""
-    registry = registry if registry is not None else load_registry()
+    registry = registry if registry is not None else load_registry(base_dir=base_dir)
     return registry.get("bots", [])
 
 
@@ -90,12 +90,12 @@ def _records(registry=None):
 # First-run migration: DISCORD_TOKEN becomes bot #1
 # ---------------------------------------------------------------------------
 
-def ensure_registry():
+def ensure_registry(base_dir=None):
     """
     Make sure bots.json exists and holds the legacy "seller" bot.
 
     Rules:
-      * If bots.json does not exist yet AND the old DISCORD_TOKEN is set,
+      * If bots.json does not exist yet AND the old DISCORD_TOKEN is set (and base_dir is None),
         we create the registry with bot "seller" (display name SELLER BOT,
         kind seller, token_env_var DISCORD_TOKEN - the SAME .env line, so
         nothing changes for existing installs).
@@ -108,27 +108,28 @@ def ensure_registry():
     Returns True when a registry file was created.
     """
     with _REGISTRY_LOCK:
-        if os.path.exists(path_for(REGISTRY_FILE)):
+        if os.path.exists(path_for(REGISTRY_FILE, base_dir=base_dir)):
             return False
 
         registry = _empty_registry()
 
-        legacy_token = os.getenv("DISCORD_TOKEN", "").strip()
-        if legacy_token:
-            registry["bots"].append({
-                "id": "seller",
-                "display_name": "INDRA BOT SYSTEM",
-                "kind": "seller",
-                "token_env_var": "DISCORD_TOKEN",
-                "application_id": "",
-                "avatar_url": "",
-                "enabled": True,
-                "allow_everyone": False,
-                "notes": "Imported from the old single-token setup.",
-                "created_at": datetime.now().isoformat(timespec="seconds"),
-            })
+        if base_dir is None:
+            legacy_token = os.getenv("DISCORD_TOKEN", "").strip()
+            if legacy_token:
+                registry["bots"].append({
+                    "id": "seller",
+                    "display_name": "INDRA BOT SYSTEM",
+                    "kind": "seller",
+                    "token_env_var": "DISCORD_TOKEN",
+                    "application_id": "",
+                    "avatar_url": "",
+                    "enabled": True,
+                    "allow_everyone": False,
+                    "notes": "Imported from the old single-token setup.",
+                    "created_at": datetime.now().isoformat(timespec="seconds"),
+                })
 
-        save_registry(registry)
+        save_registry(registry, base_dir=base_dir)
         return True
 
 
@@ -144,73 +145,53 @@ def mask_token(token):
     return "••••" + token[-4:]
 
 
-def _public(record):
+def _read_user_tokens(base_dir):
+    data = load_json("tokens.json", {}, base_dir=base_dir)
+    return data if isinstance(data, dict) else {}
+
+
+def _write_user_tokens(base_dir, tokens):
+    save_json("tokens.json", tokens if isinstance(tokens, dict) else {}, base_dir=base_dir)
+
+
+def read_token(record, base_dir=None):
+    """The bot's token, read fresh from the environment or user tokens (never stored in bots.json)."""
+    if not record:
+        return ""
+    if base_dir:
+        tokens = _read_user_tokens(base_dir)
+        return str(tokens.get(record.get("id"), "")).strip()
+    return os.getenv(record.get("token_env_var", ""), "").strip()
+
+
+def _public(record, base_dir=None):
     """
     A bot record with the token replaced by a masked hint. The raw token
-    is read from .env only at the moment a Discord call is made.
+    is read from .env or tokens.json only at the moment a Discord call is made.
     """
     out = dict(record)
-    token = os.getenv(record.get("token_env_var", ""), "").strip()
+    token = read_token(record, base_dir=base_dir)
     out["token_hint"] = mask_token(token)
     out["token_present"] = bool(token)
     return out
 
 
-def list_bots():
+def list_bots(base_dir=None):
     """All bots as the dashboard may see them (no secrets)."""
-    return [_public(record) for record in _records()]
+    return [_public(record, base_dir=base_dir) for record in _records(base_dir=base_dir)]
 
 
-def get_bot_record(bot_id):
+def get_bot_record(bot_id, base_dir=None):
     """One record (the private version - use _public() before sending out)."""
-    for record in _records():
+    for record in _records(base_dir=base_dir):
         if record.get("id") == bot_id:
             return record
     return None
 
 
-def count_enabled():
+def count_enabled(base_dir=None):
     """How many bots are switched on right now."""
-    return sum(1 for record in _records() if record.get("enabled", True))
-
-
-# ---------------------------------------------------------------------------
-# Small helpers
-# ---------------------------------------------------------------------------
-
-def _slugify(name):
-    """'My Cool Bot!' -> 'my-cool-bot' (safe for file names and env vars)."""
-    slug = re.sub(r"[^a-z0-9]+", "-", str(name).lower()).strip("-")
-    return slug[:24] or "bot"
-
-
-def _unique_id(name, existing_ids):
-    """A slug of the name that is not taken yet ('messenger', 'messenger-2'...)."""
-    base = _slugify(name)
-    candidate = base
-    counter = 2
-    while candidate in existing_ids:
-        candidate = f"{base}-{counter}"
-        counter += 1
-    return candidate
-
-
-def env_var_for(bot_id):
-    """
-    The .env key a bot's token lives under.
-    'messenger' -> BOT_MESSENGER_TOKEN, and because bot ids usually come
-    from names like 'Messenger Bot' (id 'messenger-bot'), a trailing
-    '-bot' is dropped so the key stays clean: BOT_MESSENGER_TOKEN.
-    """
-    name = re.sub(r"[^A-Z0-9]+", "_", str(bot_id).upper()).strip("_")
-    if name.endswith("_BOT") and len(name) > 4:
-        name = name[:-4]
-    return f"BOT_{name}_TOKEN"
-
-
-def read_token(record):
-    """The bot's token, read fresh from the environment (never stored)."""
-    return os.getenv(record.get("token_env_var", ""), "").strip()
+    return sum(1 for record in _records(base_dir=base_dir) if record.get("enabled", True))
 
 
 # ---------------------------------------------------------------------------
@@ -282,17 +263,17 @@ def remove_env_var(key):
 # Clients (the BotClient object that actually talks to Discord)
 # ---------------------------------------------------------------------------
 
-def get_client(bot_id):
+def get_client(bot_id, base_dir=None):
     """
     The BotClient for one bot, created fresh if its token changed.
     Raises KeyError when the bot id is unknown.
     """
-    record = get_bot_record(bot_id)
+    record = get_bot_record(bot_id, base_dir=base_dir)
     if record is None:
         raise KeyError(f"unknown bot: {bot_id}")
 
-    token = read_token(record)
-    cache_key = (bot_id, token)
+    token = read_token(record, base_dir=base_dir)
+    cache_key = (base_dir or "global", bot_id, token)
     with _REGISTRY_LOCK:
         client = _CLIENT_CACHE.get(cache_key)
         if client is None:
@@ -306,7 +287,21 @@ def get_client(bot_id):
 # Actions the dashboard buttons trigger
 # ---------------------------------------------------------------------------
 
-def add_bot(display_name, kind, token, allow_everyone=False, notes=""):
+def _unique_id(display_name, taken):
+    clean = re.sub(r"[^a-z0-9]+", "-", display_name.lower()).strip("-") or "bot"
+    candidate, counter = clean, 2
+    while candidate in taken:
+        candidate = f"{clean}-{counter}"
+        counter += 1
+    return candidate
+
+
+def env_var_for(bot_id):
+    clean = re.sub(r"[^A-Za-z0-9_]+", "_", bot_id).upper()
+    return f"DISCORD_TOKEN_{clean}"
+
+
+def add_bot(display_name, kind, token, allow_everyone=False, notes="", base_dir=None):
     """
     Add a new bot (the "Add bot" wizard).
 
@@ -315,7 +310,7 @@ def add_bot(display_name, kind, token, allow_everyone=False, notes=""):
          if it does not work, NOTHING is saved and the friendly error
          travels back to the page,
       2. a short unique id and a .env key name are chosen,
-      3. the token is written into .env (never into bots.json),
+      3. the token is written into .env (admin) or tokens.json (user),
       4. the bot record (name, kind, application id, avatar) is saved.
 
     Returns the new PUBLIC record (no token in it).
@@ -343,14 +338,20 @@ def add_bot(display_name, kind, token, allow_everyone=False, notes=""):
         me = discord_api.validate_token(token, display_name)
 
     with _REGISTRY_LOCK:
-        registry = load_registry()
+        registry = load_registry(base_dir=base_dir)
         existing = {record.get("id") for record in registry.get("bots", [])}
 
         bot_id = _unique_id(display_name, existing)
         env_key = env_var_for(bot_id)
 
-        # 2. token goes to .env only
-        write_env_var(env_key, token)
+        # 2. token goes to tokens.json (if base_dir) or .env (if root admin)
+        if base_dir:
+            tokens = _read_user_tokens(base_dir)
+            tokens[bot_id] = token
+            _write_user_tokens(base_dir, tokens)
+            env_key = f"USER_BOT_{bot_id}"
+        else:
+            write_env_var(env_key, token)
 
         # 3. the record itself
         record = {
@@ -366,12 +367,12 @@ def add_bot(display_name, kind, token, allow_everyone=False, notes=""):
             "created_at": datetime.now().isoformat(timespec="seconds"),
         }
         registry["bots"].append(record)
-        save_registry(registry)
+        save_registry(registry, base_dir=base_dir)
 
-    return _public(record)
+    return _public(record, base_dir=base_dir)
 
 
-def update_bot(bot_id, **changes):
+def update_bot(bot_id, base_dir=None, **changes):
     """
     Change editable fields of a bot (display_name, kind, notes,
     allow_everyone, enabled, application_id, avatar_url).
@@ -380,33 +381,31 @@ def update_bot(bot_id, **changes):
     allowed = {"display_name", "kind", "notes", "allow_everyone",
                "enabled", "application_id", "avatar_url"}
     with _REGISTRY_LOCK:
-        registry = load_registry()
+        registry = load_registry(base_dir=base_dir)
         for record in registry.get("bots", []):
             if record.get("id") == bot_id:
                 for key, value in changes.items():
                     if key in allowed:
                         record[key] = value
-                save_registry(registry)
-                return _public(record)
+                save_registry(registry, base_dir=base_dir)
+                return _public(record, base_dir=base_dir)
     return None
 
 
-def set_enabled(bot_id, enabled):
+def set_enabled(bot_id, enabled, base_dir=None):
     """Switch a bot on or off. Returns the updated public record (or None)."""
-    return update_bot(bot_id, enabled=bool(enabled))
+    return update_bot(bot_id, base_dir=base_dir, enabled=bool(enabled))
 
 
-def remove_bot(bot_id):
+def remove_bot(bot_id, base_dir=None):
     """
     Remove a bot from the registry.
 
-    * its token line is deleted from .env too - EXCEPT the legacy
-      DISCORD_TOKEN line, which is left alone for backward compatibility
-      (it is simply no longer used by any bot until you add one again).
+    * its token line is deleted from .env (or tokens.json for users)
     * the bot's BotClient cache entry is dropped.
     """
     with _REGISTRY_LOCK:
-        registry = load_registry()
+        registry = load_registry(base_dir=base_dir)
         kept = []
         removed = None
         for record in registry.get("bots", []):
@@ -418,77 +417,83 @@ def remove_bot(bot_id):
             return False
 
         registry["bots"] = kept
-        save_registry(registry)
+        save_registry(registry, base_dir=base_dir)
 
-        env_key = removed.get("token_env_var", "")
-        if env_key and env_key != "DISCORD_TOKEN":
-            remove_env_var(env_key)
+        if base_dir:
+            tokens = _read_user_tokens(base_dir)
+            tokens.pop(bot_id, None)
+            _write_user_tokens(base_dir, tokens)
+        else:
+            env_key = removed.get("token_env_var", "")
+            if env_key and env_key != "DISCORD_TOKEN":
+                remove_env_var(env_key)
 
-        _CLIENT_CACHE.pop((bot_id, read_token(removed)), None)
+        cache_key = (base_dir or "global", bot_id, read_token(removed, base_dir=base_dir))
+        _CLIENT_CACHE.pop(cache_key, None)
         return True
 
 
-def test_bot(bot_id):
+def test_bot(bot_id, base_dir=None):
     """
     Live connection check: ask Discord who this bot is right now.
     Returns the public record refreshed with the live identity.
     Raises discord_api.DiscordAPIError when the check fails.
     """
-    record = get_bot_record(bot_id)
+    record = get_bot_record(bot_id, base_dir=base_dir)
     if record is None:
         raise KeyError(bot_id)
 
-    token = read_token(record)
+    token = read_token(record, base_dir=base_dir)
     if not token:
         raise discord_api.DiscordAPIError(
             0, "no token",
-            f"{record.get('display_name', bot_id)} has no token in .env "
-            f"(key {record.get('token_env_var', '?')}). Open the .env file "
-            "and paste the token after the = sign, then restart the app.",
+            f"{record.get('display_name', bot_id)} has no token configured. "
+            "Please paste the bot token in your Bot settings.",
             "no_token", record.get("display_name", bot_id))
 
-    client = get_client(bot_id)
+    client = get_client(bot_id, base_dir=base_dir)
     me = client.get_me(force=True)          # skip the cache - a real check
 
     # refresh the cached identity (application id never changes, avatar may)
     return update_bot(
         bot_id,
+        base_dir=base_dir,
         application_id=me.get("id", record.get("application_id", "")),
         avatar_url=discord_api.avatar_url(me),
     )
 
 
-def invite_url_for(bot_id, allow_everyone=False):
+def invite_url_for(bot_id, allow_everyone=False, base_dir=None):
     """
     The ready-made invite link for a bot (scope=bot + exactly the
     permissions the app needs). allow_everyone=True adds the
     "Mention Everyone" permission to the invite.
     """
-    record = get_bot_record(bot_id)
+    record = get_bot_record(bot_id, base_dir=base_dir)
     if record is None:
         raise KeyError(bot_id)
 
     application_id = record.get("application_id") or ""
     if not application_id:
         # not known yet (never tested) - do a live lookup so the link works
-        me = get_client(bot_id).get_me(force=True)
+        me = get_client(bot_id, base_dir=base_dir).get_me(force=True)
         application_id = me.get("id", "")
-        update_bot(bot_id, application_id=application_id,
+        update_bot(bot_id, base_dir=base_dir, application_id=application_id,
                    avatar_url=discord_api.avatar_url(me))
 
     wants_everyone = allow_everyone or record.get("allow_everyone", False)
     return discord_api.build_invite_url(application_id, wants_everyone)
 
 
-def default_bot_id():
+def default_bot_id(base_dir=None):
     """The first enabled bot (the one the dashboard opens with), or ''."""
-    for record in _records():
+    for record in _records(base_dir=base_dir):
         if record.get("enabled", True):
             return record.get("id", "")
     return ""
 
 
-def resolve_bot(bot_id, strict=False):
+def resolve_bot(bot_id, strict=False, base_dir=None):
     """
     The bot an action should run as.
 
@@ -501,12 +506,12 @@ def resolve_bot(bot_id, strict=False):
     error, never a silent switch to a different bot posting the message.
     """
     if bot_id:
-        record = get_bot_record(bot_id)
+        record = get_bot_record(bot_id, base_dir=base_dir)
         if record and record.get("enabled", True):
             return record        # exists and enabled - good in both modes
         if strict:
             return None          # explicit request for an unknown/disabled bot
-    return get_bot_record(default_bot_id())
+    return get_bot_record(default_bot_id(base_dir=base_dir), base_dir=base_dir)
 
 
 # ---------------------------------------------------------------------------
