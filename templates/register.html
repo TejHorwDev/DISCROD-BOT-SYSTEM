@@ -5,27 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Activate License &bull; INDRA BOT SYSTEM</title>
   <meta name="description" content="License Key Registration for INDRA BOT SYSTEM">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%235865F2'/%3E%3Cpath d='M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z' transform='translate(1.2 1.2) scale(0.9)' fill='%23fff'/%3E%3Ccircle cx='7' cy='7' r='1.5' fill='%235865F2' transform='translate(1.2 1.2) scale(0.9)'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23181a20'/%3E%3Cpath d='M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z' transform='translate(1.2 1.2) scale(0.9)' fill='%23ffffff'/%3E%3Ccircle cx='7' cy='7' r='1.5' fill='%23181a20' transform='translate(1.2 1.2) scale(0.9)'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-main: #090a0c;
-      --card-bg: #121418;
-      --card-border: #20232a;
-      --input-bg: #0d0f12;
-      --input-border: #242731;
-      --input-border-focus: #4b5162;
+      --bg-main: #0a0b0e;
+      --card-bg: #13151a;
+      --card-border: #21242d;
+      --input-bg: #0d0f13;
+      --input-border: #232732;
+      --input-focus: #4b5263;
       --text-white: #f8fafc;
-      --text-muted: #8e95a5;
-      --text-sub: #5d6373;
-      --btn-primary: #1e222b;
-      --btn-primary-hover: #262b36;
-      --btn-border: #2e3340;
-      --accent-brand: #5865F2;
-      --danger-bg: rgba(239, 68, 68, 0.1);
-      --danger-border: rgba(239, 68, 68, 0.25);
+      --text-muted: #8b92a4;
+      --text-sub: #555b6d;
+      --btn-bg: #1c1f27;
+      --btn-hover: #252a35;
+      --btn-border: #2c323f;
+      --tag-bg: #0f1115;
+      --tag-border: #1c1f26;
+      --danger-bg: rgba(239, 68, 68, 0.08);
+      --danger-border: rgba(239, 68, 68, 0.22);
       --danger-text: #f87171;
     }
 
@@ -54,8 +55,8 @@
     .auth-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 18px;
-      padding: 36px 32px;
+      border-radius: 16px;
+      padding: 36px 30px;
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
     }
 
@@ -68,20 +69,20 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 58px;
-      height: 58px;
-      border-radius: 16px;
-      background: #171a21;
-      border: 1px solid #282d39;
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      background: #181a21;
+      border: 1px solid #282c37;
       margin-bottom: 14px;
     }
 
     .brand-title {
-      font-size: 21px;
+      font-size: 20px;
       font-weight: 700;
       letter-spacing: -0.02em;
       color: var(--text-white);
-      margin-bottom: 5px;
+      margin-bottom: 4px;
     }
 
     .brand-subtitle {
@@ -117,11 +118,11 @@
     }
 
     .form-label {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 600;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
-      color: #cbd5e1;
+      color: #9ca3af;
     }
 
     .input-wrap {
@@ -145,16 +146,20 @@
       background: var(--input-bg);
       border: 1px solid var(--input-border);
       border-radius: 10px;
-      color: #fff;
+      color: #ffffff;
       font-size: 14px;
       font-family: inherit;
       outline: none;
       transition: border-color 0.15s ease, background 0.15s ease;
     }
 
+    .form-input::placeholder {
+      color: #4b5563;
+    }
+
     .form-input:focus {
-      border-color: var(--input-border-focus);
-      background: #111317;
+      border-color: var(--input-focus);
+      background: #101217;
     }
 
     .key-input {
@@ -169,7 +174,7 @@
     .pwd-meter {
       height: 3px;
       width: 100%;
-      background: #1e222b;
+      background: #1a1d24;
       border-radius: 3px;
       margin-top: 4px;
       overflow: hidden;
@@ -195,7 +200,7 @@
       right: 12px;
       background: none;
       border: none;
-      color: #64748b;
+      color: #555b6d;
       cursor: pointer;
       padding: 4px;
       display: flex;
@@ -204,14 +209,14 @@
     }
 
     .btn-toggle-pwd:hover {
-      color: #cbd5e1;
+      color: #9ca3af;
     }
 
     .btn-submit {
       width: 100%;
       padding: 13px;
       margin-top: 6px;
-      background: var(--btn-primary);
+      background: var(--btn-bg);
       border: 1px solid var(--btn-border);
       color: #ffffff;
       font-size: 14px;
@@ -227,8 +232,8 @@
     }
 
     .btn-submit:hover {
-      background: var(--btn-primary-hover);
-      border-color: #3b4252;
+      background: var(--btn-hover);
+      border-color: #384050;
     }
 
     .btn-submit:active {
@@ -246,13 +251,13 @@
       justify-content: space-between;
       margin-top: 20px;
       padding-top: 16px;
-      border-top: 1px solid #1c1f26;
+      border-top: 1px solid #1a1d24;
       font-size: 13px;
       color: var(--text-muted);
     }
 
     .links-row a {
-      color: #8b9bb4;
+      color: #cbd5e1;
       text-decoration: none;
       font-weight: 600;
     }
@@ -276,10 +281,10 @@
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      background: #101216;
+      background: var(--tag-bg);
       padding: 4px 9px;
       border-radius: 6px;
-      border: 1px solid #1e2129;
+      border: 1px solid var(--tag-border);
     }
   </style>
 </head>
@@ -289,7 +294,7 @@
     <div class="auth-card">
       <div class="brand-header">
         <div class="brand-icon-wrap">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#5865F2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
           </svg>
         </div>
@@ -394,7 +399,7 @@
       if (val.length === 0) {
         meterFill.style.width = '0%';
         strengthText.textContent = 'Strength: Too short';
-        strengthText.style.color = '#5d6373';
+        strengthText.style.color = '#555b6d';
       } else if (val.length < 6) {
         meterFill.style.width = '25%';
         meterFill.style.background = '#dc2626';
@@ -419,7 +424,7 @@
     function checkMatch() {
       if (!confirmInput.value) {
         matchText.textContent = 'Passwords must match';
-        matchText.style.color = '#5d6373';
+        matchText.style.color = '#555b6d';
       } else if (confirmInput.value === pwdInput.value) {
         matchText.textContent = '✓ Passwords match';
         matchText.style.color = '#16a34a';

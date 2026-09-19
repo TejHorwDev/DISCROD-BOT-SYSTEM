@@ -116,6 +116,8 @@ except ImportError:                                  # pragma: no cover
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
 app = Flask(__name__)
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
 # Secret key for secure session cookies
 app.secret_key = os.getenv("SECRET_KEY", "indra_bot_secret_key_8f39c2e17b54a06d")
