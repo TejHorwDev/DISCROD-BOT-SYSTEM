@@ -3,216 +3,383 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Register &bull; INDRA BOT SYSTEM</title>
+  <title>Activate License &bull; INDRA BOT SYSTEM</title>
   <meta name="description" content="One-Time License Key Registration for INDRA BOT SYSTEM">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%235865F2'/%3E%3Cpath d='M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z' transform='translate(1.2 1.2) scale(0.9)' fill='%23fff'/%3E%3Ccircle cx='7' cy='7' r='1.5' fill='%235865F2' transform='translate(1.2 1.2) scale(0.9)'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%235865F2'/%3E%3Cpath d='M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z' transform='translate(1.2 1.2) scale(0.9)' fill='%23fff'/%3E%3Ccircle cx='7' cy='7' r='1.5' fill='%235865F2' transform='translate(1.2 1.2) scale(0.9)'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-oled: #08090b;
-      --card-bg: rgba(16, 18, 24, 0.92);
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-focus: #5865F2;
-      --text-main: #f3f4f6;
-      --text-muted: #9ca3af;
-      --accent-glow: rgba(88, 101, 242, 0.28);
+      --bg-deep: #050608;
+      --card-bg: rgba(13, 16, 23, 0.90);
+      --card-border: rgba(255, 255, 255, 0.09);
+      --accent-discord: #5865F2;
+      --accent-cyan: #00f0ff;
+      --accent-green: #10B981;
+      --text-white: #ffffff;
+      --text-muted: #94a3b8;
+      --text-sub: #64748b;
+      --input-bg: rgba(18, 22, 33, 0.92);
+      --input-border: rgba(255, 255, 255, 0.12);
     }
-    body {
+
+    * {
+      box-sizing: border-box;
       margin: 0;
-      padding: 20px 0;
+      padding: 0;
+    }
+
+    body {
       min-height: 100vh;
-      background-color: var(--bg-oled);
+      background-color: var(--bg-deep);
       background-image: 
-        radial-gradient(circle at 50% 12%, rgba(88, 101, 242, 0.14) 0%, transparent 60%),
-        radial-gradient(circle at 85% 85%, rgba(67, 181, 129, 0.07) 0%, transparent 50%),
-        radial-gradient(circle at 15% 85%, rgba(240, 71, 71, 0.06) 0%, transparent 50%);
+        radial-gradient(circle at 50% -10%, rgba(88, 101, 242, 0.28) 0%, transparent 60%),
+        radial-gradient(circle at 90% 85%, rgba(0, 240, 255, 0.10) 0%, transparent 50%),
+        radial-gradient(circle at 10% 85%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-white);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      color: var(--text-main);
-      box-sizing: border-box;
+      padding: 24px 16px;
+      position: relative;
+      overflow-x: hidden;
     }
-    .register-container {
+
+    /* Ambient Background Grid */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 36px 36px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .auth-container {
       width: 100%;
-      max-width: 460px;
-      padding: 20px;
-      box-sizing: border-box;
+      max-width: 470px;
       position: relative;
       z-index: 10;
+      animation: fadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .register-card {
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(14px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .auth-card {
       background: var(--card-bg);
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-      border: 1px solid var(--border-subtle);
-      border-radius: 22px;
-      padding: 34px 30px;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 45px rgba(88, 101, 242, 0.09);
-      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+      backdrop-filter: blur(36px);
+      -webkit-backdrop-filter: blur(36px);
+      border: 1px solid var(--card-border);
+      border-radius: 26px;
+      padding: 36px 32px;
+      box-shadow: 
+        0 30px 80px -15px rgba(0, 0, 0, 0.85),
+        0 0 50px -10px rgba(88, 101, 242, 0.22);
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
-    .register-card:hover {
-      border-color: rgba(88, 101, 242, 0.35);
-      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.8), 0 0 55px rgba(88, 101, 242, 0.16);
+
+    .auth-card:hover {
+      border-color: rgba(88, 101, 242, 0.4);
+      box-shadow: 
+        0 35px 90px -15px rgba(0, 0, 0, 0.95),
+        0 0 65px -8px rgba(88, 101, 242, 0.32);
     }
-    .brand-wrap {
+
+    /* Top Aurora Accent Line */
+    .auth-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 15%;
+      right: 15%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #5865F2, #00f0ff, transparent);
+      opacity: 0.85;
+    }
+
+    .brand-header {
       text-align: center;
       margin-bottom: 24px;
     }
-    .brand-icon {
+
+    .brand-icon-wrap {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 60px;
-      height: 60px;
-      background: linear-gradient(135deg, rgba(88, 101, 242, 0.25), rgba(88, 101, 242, 0.06));
+      width: 68px;
+      height: 68px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(88, 101, 242, 0.25), rgba(0, 240, 255, 0.1));
       border: 1px solid rgba(88, 101, 242, 0.45);
-      border-radius: 16px;
-      margin-bottom: 14px;
-      box-shadow: 0 8px 24px var(--accent-glow);
+      box-shadow: 0 10px 30px rgba(88, 101, 242, 0.32);
+      margin-bottom: 16px;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    .title {
-      margin: 0 0 6px 0;
-      font-size: 22px;
+
+    .brand-icon-wrap:hover {
+      transform: scale(1.08) rotate(3deg);
+    }
+
+    .brand-title {
+      font-size: 23px;
       font-weight: 800;
-      letter-spacing: -0.02em;
-      color: #fff;
+      letter-spacing: -0.025em;
+      background: linear-gradient(135deg, #ffffff 30%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
     }
-    .subtitle {
-      margin: 0;
+
+    .brand-subtitle {
       font-size: 13.5px;
       color: var(--text-muted);
-      line-height: 1.4;
+      line-height: 1.5;
     }
-    .form-col {
+
+    /* Error / Alert Box */
+    .alert-box {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: shake 0.3s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+
+    .auth-form {
       display: flex;
       flex-direction: column;
       gap: 16px;
     }
+
     .form-group {
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
-    .form-group label {
+
+    .form-label {
       font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
+      font-weight: 700;
       letter-spacing: 0.05em;
+      text-transform: uppercase;
       color: #cbd5e1;
+      display: flex;
+      justify-content: space-between;
     }
+
     .input-wrap {
       position: relative;
       display: flex;
       align-items: center;
     }
+
     .input-icon {
       position: absolute;
       left: 14px;
-      width: 17px;
-      height: 17px;
+      width: 19px;
+      height: 19px;
       color: #64748b;
       pointer-events: none;
+      transition: color 0.2s ease;
     }
+
     .form-input {
       width: 100%;
-      padding: 11px 14px 11px 40px;
-      background: #0f1117;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 10px;
+      padding: 12px 14px 12px 44px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 12px;
       color: #fff;
       font-size: 14px;
+      font-family: inherit;
       outline: none;
-      box-sizing: border-box;
       transition: all 0.2s ease;
     }
+
     .form-input:focus {
-      border-color: var(--border-focus);
-      box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.25);
-      background: #141720;
+      border-color: var(--accent-discord);
+      background: rgba(22, 27, 40, 0.98);
+      box-shadow: 
+        0 0 0 3px rgba(88, 101, 242, 0.28),
+        0 0 20px rgba(88, 101, 242, 0.16);
     }
+
+    .form-input:focus ~ .input-icon {
+      color: var(--accent-discord);
+    }
+
+    /* Monospace for license key */
     .key-input {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-family: 'JetBrains Mono', monospace;
       letter-spacing: 0.08em;
-      text-transform: uppercase;
       font-weight: 600;
-      color: #a5b4fc;
+      text-transform: uppercase;
+      color: #00f0ff;
     }
-    .btn-register {
-      margin-top: 8px;
-      padding: 13px 20px;
-      background: #5865F2;
-      color: #fff;
-      font-size: 15px;
-      font-weight: 700;
+
+    /* Password Strength Indicator */
+    .pwd-meter {
+      height: 4px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      margin-top: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .pwd-meter-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 4px;
+      transition: width 0.3s ease, background-color 0.3s ease;
+    }
+
+    .pwd-hint {
+      font-size: 11.5px;
+      color: var(--text-sub);
+      display: flex;
+      justify-content: space-between;
+      margin-top: 2px;
+    }
+
+    .btn-toggle-pwd {
+      position: absolute;
+      right: 12px;
+      background: none;
       border: none;
-      border-radius: 10px;
+      color: #64748b;
+      cursor: pointer;
+      padding: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: color 0.15s ease;
+    }
+
+    .btn-toggle-pwd:hover {
+      color: #cbd5e1;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      margin-top: 8px;
+      background: linear-gradient(135deg, #5865F2 0%, #4752C4 100%);
+      color: #fff;
+      font-size: 14.5px;
+      font-weight: 700;
+      font-family: inherit;
+      border: none;
+      border-radius: 12px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 16px rgba(88, 101, 242, 0.4);
+      gap: 10px;
+      box-shadow: 0 4px 20px rgba(88, 101, 242, 0.42);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .btn-register:hover {
-      background: #4752c4;
-      transform: translateY(-1px);
-      box-shadow: 0 6px 22px rgba(88, 101, 242, 0.55);
+
+    .btn-submit:hover {
+      background: linear-gradient(135deg, #6472f5 0%, #4e5bd4 100%);
+      transform: translateY(-1.5px);
+      box-shadow: 0 8px 28px rgba(88, 101, 242, 0.58);
     }
-    .btn-register:disabled {
-      opacity: 0.6;
+
+    .btn-submit:active {
+      transform: translateY(0.5px);
+      box-shadow: 0 3px 12px rgba(88, 101, 242, 0.4);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.65;
       cursor: not-allowed;
       transform: none;
     }
-    .alert-box {
-      background: rgba(240, 71, 71, 0.12);
-      border: 1px solid rgba(240, 71, 71, 0.4);
-      color: #ff7b7b;
-      padding: 11px 14px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 500;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+
+    /* Links row */
     .links-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-top: 18px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
       font-size: 13px;
       color: var(--text-muted);
     }
+
     .links-row a {
-      color: #5865F2;
+      color: #818cf8;
       text-decoration: none;
       font-weight: 600;
       transition: color 0.15s ease;
     }
+
     .links-row a:hover {
-      color: #818cf8;
+      color: #a5b4fc;
       text-decoration: underline;
+    }
+
+    /* Feature Pills */
+    .features-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .feature-tag {
+      font-size: 11px;
+      color: var(--text-sub);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
   </style>
 </head>
 <body>
 
-  <div class="register-container">
-    <div class="register-card">
-      <div class="brand-wrap">
-        <div class="brand-icon">
-          <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#5865F2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="brand-header">
+        <div class="brand-icon-wrap">
+          <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#5865F2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
           </svg>
         </div>
-        <h1 class="title">Join INDRA BOT SYSTEM</h1>
-        <p class="subtitle">Enter your personal License Key to activate your isolated dashboard.</p>
+        <h1 class="brand-title">Activate License</h1>
+        <p class="brand-subtitle">Redeem your License Key to claim your isolated Studio dashboard</p>
       </div>
 
       <div id="regAlert" class="alert-box" {% if not error %}style="display: none;"{% endif %}>
@@ -220,48 +387,60 @@
         <span id="regAlertText">{{ error or 'Registration failed.' }}</span>
       </div>
 
-      <form class="form-col" id="registerForm">
+      <form class="auth-form" id="registerForm" method="POST" action="/register">
         <div class="form-group">
-          <label for="licenseKey">License Key</label>
+          <label class="form-label" for="licenseKey">License Key</label>
           <div class="input-wrap">
             <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-            <input type="text" id="licenseKey" name="license_key" class="form-input key-input" placeholder="INDRA-VIP-2026" required autocomplete="off" autofocus>
+            <input type="text" id="licenseKey" name="license_key" class="form-input key-input" placeholder="INDRA-XXXX-XXXX" required autocomplete="off" autofocus>
           </div>
         </div>
 
         <div class="form-group">
-          <label for="regEmail">Your Email</label>
+          <label class="form-label" for="regEmail">Your Email</label>
           <div class="input-wrap">
             <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-            <input type="email" id="regEmail" name="email" class="form-input" placeholder="your-email@domain.com" required autocomplete="email">
+            <input type="email" id="regEmail" name="email" class="form-input" placeholder="friend@domain.com" required autocomplete="email">
           </div>
         </div>
 
         <div class="form-group">
-          <label for="regPassword">Create Password</label>
+          <label class="form-label" for="regPassword">Create Password</label>
           <div class="input-wrap">
             <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             <input type="password" id="regPassword" name="password" class="form-input" placeholder="At least 6 characters" required autocomplete="new-password">
+            <button type="button" class="btn-toggle-pwd" id="togglePwdBtn" title="Toggle password visibility">
+              <svg id="eyeIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
           </div>
+          <div class="pwd-meter"><div class="pwd-meter-fill" id="pwdMeterFill"></div></div>
+          <div class="pwd-hint"><span id="pwdStrengthText">Strength: Too short</span><span>Min 6 characters</span></div>
         </div>
 
         <div class="form-group">
-          <label for="regConfirmPassword">Confirm Password</label>
+          <label class="form-label" for="regConfirmPassword">Confirm Password</label>
           <div class="input-wrap">
             <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             <input type="password" id="regConfirmPassword" name="confirm_password" class="form-input" placeholder="Repeat your password" required autocomplete="new-password">
           </div>
+          <div class="pwd-hint"><span id="pwdMatchText" style="color: #64748b;">Passwords must match</span></div>
         </div>
 
-        <button type="submit" class="btn-register" id="submitBtn">
-          <span>Activate & Launch Studio</span>
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        <button type="submit" class="btn-submit" id="submitBtn">
+          <span>Activate &amp; Launch Studio</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
         </button>
       </form>
 
       <div class="links-row">
-        <span>Already registered?</span>
+        <span>Already have an account?</span>
         <a href="/login">Sign In &rarr;</a>
+      </div>
+
+      <div class="features-row">
+        <span class="feature-tag">&#9889; Instant Tenant</span>
+        <span class="feature-tag">&#128274; Dedicated Storage</span>
+        <span class="feature-tag">&#128038; Discord Bot Freedom</span>
       </div>
     </div>
   </div>
@@ -271,15 +450,78 @@
     const alertBox = document.getElementById('regAlert');
     const alertText = document.getElementById('regAlertText');
     const submitBtn = document.getElementById('submitBtn');
+    const togglePwdBtn = document.getElementById('togglePwdBtn');
+    const pwdInput = document.getElementById('regPassword');
+    const confirmInput = document.getElementById('regConfirmPassword');
+    const eyeIcon = document.getElementById('eyeIcon');
+    const meterFill = document.getElementById('pwdMeterFill');
+    const strengthText = document.getElementById('pwdStrengthText');
+    const matchText = document.getElementById('pwdMatchText');
+    const keyInput = document.getElementById('licenseKey');
+
+    // Auto-clean license key
+    keyInput.addEventListener('input', () => {
+      keyInput.value = keyInput.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+    });
+
+    togglePwdBtn.addEventListener('click', () => {
+      const isPwd = pwdInput.type === 'password';
+      pwdInput.type = isPwd ? 'text' : 'password';
+      confirmInput.type = isPwd ? 'text' : 'password';
+      eyeIcon.innerHTML = isPwd 
+        ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>'
+        : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+    });
+
+    // Password strength check
+    pwdInput.addEventListener('input', () => {
+      const val = pwdInput.value;
+      if (val.length === 0) {
+        meterFill.style.width = '0%';
+        strengthText.textContent = 'Strength: Too short';
+        strengthText.style.color = '#64748b';
+      } else if (val.length < 6) {
+        meterFill.style.width = '25%';
+        meterFill.style.background = '#ef4444';
+        strengthText.textContent = 'Strength: Too short';
+        strengthText.style.color = '#ef4444';
+      } else if (val.length < 10 && !/[0-9!@#$%^&*]/.test(val)) {
+        meterFill.style.width = '55%';
+        meterFill.style.background = '#f59e0b';
+        strengthText.textContent = 'Strength: Medium';
+        strengthText.style.color = '#f59e0b';
+      } else {
+        meterFill.style.width = '100%';
+        meterFill.style.background = '#10B981';
+        strengthText.textContent = 'Strength: Strong';
+        strengthText.style.color = '#10B981';
+      }
+      checkMatch();
+    });
+
+    confirmInput.addEventListener('input', checkMatch);
+
+    function checkMatch() {
+      if (!confirmInput.value) {
+        matchText.textContent = 'Passwords must match';
+        matchText.style.color = '#64748b';
+      } else if (confirmInput.value === pwdInput.value) {
+        matchText.textContent = '✓ Passwords match';
+        matchText.style.color = '#10B981';
+      } else {
+        matchText.textContent = '✗ Passwords do not match';
+        matchText.style.color = '#ef4444';
+      }
+    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       alertBox.style.display = 'none';
 
-      const licenseKey = document.getElementById('licenseKey').value.trim().toUpperCase();
+      const licenseKey = keyInput.value.trim().toUpperCase();
       const email = document.getElementById('regEmail').value.trim();
-      const password = document.getElementById('regPassword').value;
-      const confirmPassword = document.getElementById('regConfirmPassword').value;
+      const password = pwdInput.value;
+      const confirmPassword = confirmInput.value;
 
       if (password !== confirmPassword) {
         alertText.textContent = 'Passwords do not match.';
@@ -308,11 +550,11 @@
         });
         const data = await res.json();
         if (data.ok) {
-          submitBtn.querySelector('span').textContent = 'Account Activated! Redirecting...';
-          submitBtn.style.background = '#43b581';
+          submitBtn.querySelector('span').textContent = 'Activated! Redirecting to Studio...';
+          submitBtn.style.background = '#10B981';
           setTimeout(() => {
             window.location.href = '/';
-          }, 600);
+          }, 500);
         } else {
           alertText.textContent = data.error || 'Registration failed.';
           alertBox.style.display = 'flex';
@@ -320,10 +562,8 @@
           submitBtn.querySelector('span').textContent = 'Activate & Launch Studio';
         }
       } catch (err) {
-        alertText.textContent = 'Network error. Please try again.';
-        alertBox.style.display = 'flex';
-        submitBtn.disabled = false;
-        submitBtn.querySelector('span').textContent = 'Activate & Launch Studio';
+        // Fallback
+        form.submit();
       }
     });
   </script>

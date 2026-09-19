@@ -3,323 +3,481 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Login &bull; INDRA BOT SYSTEM</title>
-  <meta name="description" content="Secure Admin Login for INDRA BOT SYSTEM">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%235865F2'/%3E%3Cpath d='M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z' transform='translate(1.2 1.2) scale(0.9)' fill='%23fff'/%3E%3Ccircle cx='7' cy='7' r='1.5' fill='%235865F2' transform='translate(1.2 1.2) scale(0.9)'/%3E%3C/svg%3E">
+  <title>Sign In &bull; INDRA BOT SYSTEM</title>
+  <meta name="description" content="Secure Cloud Dashboard Sign In for INDRA BOT SYSTEM">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%235865F2'/%3E%3Cpath d='M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z' transform='translate(1.2 1.2) scale(0.9)' fill='%23fff'/%3E%3Ccircle cx='7' cy='7' r='1.5' fill='%235865F2' transform='translate(1.2 1.2) scale(0.9)'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-oled: #08090b;
-      --card-bg: rgba(16, 18, 24, 0.88);
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-focus: #5865F2;
-      --text-main: #f3f4f6;
-      --text-muted: #9ca3af;
-      --accent-glow: rgba(88, 101, 242, 0.25);
+      --bg-deep: #050608;
+      --card-bg: rgba(13, 16, 23, 0.88);
+      --card-border: rgba(255, 255, 255, 0.09);
+      --accent-discord: #5865F2;
+      --accent-cyan: #00f0ff;
+      --accent-green: #10B981;
+      --text-white: #ffffff;
+      --text-muted: #94a3b8;
+      --text-sub: #64748b;
+      --input-bg: rgba(18, 22, 33, 0.92);
+      --input-border: rgba(255, 255, 255, 0.12);
     }
-    body {
+
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
+    }
+
+    body {
       min-height: 100vh;
-      background-color: var(--bg-oled);
+      background-color: var(--bg-deep);
       background-image: 
-        radial-gradient(circle at 50% 15%, rgba(88, 101, 242, 0.12) 0%, transparent 60%),
-        radial-gradient(circle at 85% 85%, rgba(67, 181, 129, 0.06) 0%, transparent 50%),
-        radial-gradient(circle at 15% 85%, rgba(240, 71, 71, 0.05) 0%, transparent 50%);
+        radial-gradient(circle at 50% -10%, rgba(88, 101, 242, 0.28) 0%, transparent 60%),
+        radial-gradient(circle at 90% 85%, rgba(0, 240, 255, 0.10) 0%, transparent 50%),
+        radial-gradient(circle at 10% 85%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-white);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      color: var(--text-main);
-      box-sizing: border-box;
+      padding: 24px 16px;
+      position: relative;
+      overflow-x: hidden;
     }
-    .login-container {
+
+    /* Ambient Background Grid */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 36px 36px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .auth-container {
       width: 100%;
       max-width: 440px;
-      padding: 24px;
-      box-sizing: border-box;
       position: relative;
       z-index: 10;
+      animation: fadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .login-card {
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(14px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .auth-card {
       background: var(--card-bg);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid var(--border-subtle);
-      border-radius: 20px;
-      padding: 36px 32px;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 40px rgba(88, 101, 242, 0.08);
-      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+      backdrop-filter: blur(36px);
+      -webkit-backdrop-filter: blur(36px);
+      border: 1px solid var(--card-border);
+      border-radius: 26px;
+      padding: 38px 34px;
+      box-shadow: 
+        0 30px 80px -15px rgba(0, 0, 0, 0.85),
+        0 0 50px -10px rgba(88, 101, 242, 0.22);
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
-    .login-card:hover {
-      border-color: rgba(88, 101, 242, 0.35);
-      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.75), 0 0 50px rgba(88, 101, 242, 0.15);
+
+    .auth-card:hover {
+      border-color: rgba(88, 101, 242, 0.4);
+      box-shadow: 
+        0 35px 90px -15px rgba(0, 0, 0, 0.95),
+        0 0 65px -8px rgba(88, 101, 242, 0.32);
     }
-    .login-brand {
+
+    /* Top Aurora Accent Line */
+    .auth-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 15%;
+      right: 15%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #5865F2, #00f0ff, transparent);
+      opacity: 0.85;
+    }
+
+    .brand-header {
       text-align: center;
       margin-bottom: 28px;
     }
+
     .brand-icon-wrap {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 64px;
-      height: 64px;
-      background: linear-gradient(135deg, rgba(88, 101, 242, 0.2), rgba(88, 101, 242, 0.05));
-      border: 1px solid rgba(88, 101, 242, 0.4);
-      border-radius: 18px;
+      width: 68px;
+      height: 68px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(88, 101, 242, 0.25), rgba(0, 240, 255, 0.1));
+      border: 1px solid rgba(88, 101, 242, 0.45);
+      box-shadow: 0 10px 30px rgba(88, 101, 242, 0.32);
       margin-bottom: 16px;
-      box-shadow: 0 8px 24px var(--accent-glow);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    .login-title {
-      margin: 0 0 6px 0;
-      font-size: 22px;
+
+    .brand-icon-wrap:hover {
+      transform: scale(1.08) rotate(3deg);
+    }
+
+    .brand-title {
+      font-size: 23px;
       font-weight: 800;
-      letter-spacing: -0.02em;
-      color: #fff;
+      letter-spacing: -0.025em;
+      background: linear-gradient(135deg, #ffffff 30%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
     }
-    .login-subtitle {
-      margin: 0;
+
+    .brand-subtitle {
       font-size: 13.5px;
       color: var(--text-muted);
-      line-height: 1.4;
+      line-height: 1.5;
     }
-    .login-form {
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-top: 10px;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 8px #10B981;
+      animation: pulseDot 2s infinite;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Error / Alert Box */
+    .alert-box {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: shake 0.3s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+
+    .auth-form {
       display: flex;
       flex-direction: column;
       gap: 18px;
     }
+
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 7px;
     }
-    .form-group label {
-      font-size: 12.5px;
-      font-weight: 600;
-      text-transform: uppercase;
+
+    .form-label {
+      font-size: 12px;
+      font-weight: 700;
       letter-spacing: 0.05em;
+      text-transform: uppercase;
       color: #cbd5e1;
+      display: flex;
+      justify-content: space-between;
     }
-    .input-wrapper {
+
+    .input-wrap {
       position: relative;
       display: flex;
       align-items: center;
     }
+
     .input-icon {
       position: absolute;
       left: 14px;
-      width: 18px;
-      height: 18px;
+      width: 19px;
+      height: 19px;
       color: #64748b;
       pointer-events: none;
+      transition: color 0.2s ease;
     }
+
     .form-input {
       width: 100%;
-      padding: 12px 14px 12px 42px;
-      background: #0f1117;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 10px;
+      padding: 13px 44px 13px 44px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 12px;
       color: #fff;
-      font-size: 14.5px;
+      font-size: 14px;
+      font-family: inherit;
       outline: none;
-      box-sizing: border-box;
       transition: all 0.2s ease;
     }
+
     .form-input:focus {
-      border-color: var(--border-focus);
-      box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.25);
-      background: #141720;
+      border-color: var(--accent-discord);
+      background: rgba(22, 27, 40, 0.98);
+      box-shadow: 
+        0 0 0 3px rgba(88, 101, 242, 0.28),
+        0 0 20px rgba(88, 101, 242, 0.16);
     }
-    .toggle-pwd {
+
+    .form-input:focus ~ .input-icon {
+      color: var(--accent-discord);
+    }
+
+    .btn-toggle-pwd {
       position: absolute;
       right: 12px;
       background: none;
       border: none;
       color: #64748b;
       cursor: pointer;
-      padding: 4px;
+      padding: 5px;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 6px;
-      transition: color 0.2s;
+      transition: color 0.15s ease;
     }
-    .toggle-pwd:hover {
-      color: #fff;
+
+    .btn-toggle-pwd:hover {
+      color: #cbd5e1;
     }
-    .btn-login {
-      margin-top: 8px;
-      padding: 13px 20px;
-      background: #5865F2;
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      margin-top: 6px;
+      background: linear-gradient(135deg, #5865F2 0%, #4752C4 100%);
       color: #fff;
-      font-size: 15px;
+      font-size: 14.5px;
       font-weight: 700;
+      font-family: inherit;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 16px rgba(88, 101, 242, 0.4);
+      gap: 10px;
+      box-shadow: 0 4px 20px rgba(88, 101, 242, 0.42);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
     }
-    .btn-login:hover {
-      background: #4752c4;
-      transform: translateY(-1px);
-      box-shadow: 0 6px 22px rgba(88, 101, 242, 0.55);
+
+    .btn-submit:hover {
+      background: linear-gradient(135deg, #6472f5 0%, #4e5bd4 100%);
+      transform: translateY(-1.5px);
+      box-shadow: 0 8px 28px rgba(88, 101, 242, 0.58);
     }
-    .btn-login:active {
-      transform: translateY(0);
+
+    .btn-submit:active {
+      transform: translateY(0.5px);
+      box-shadow: 0 3px 12px rgba(88, 101, 242, 0.4);
     }
-    .btn-login:disabled {
-      opacity: 0.6;
+
+    .btn-submit:disabled {
+      opacity: 0.65;
       cursor: not-allowed;
       transform: none;
     }
-    .login-error {
-      background: rgba(240, 71, 71, 0.12);
-      border: 1px solid rgba(240, 71, 71, 0.4);
-      color: #ff7b7b;
-      padding: 12px 14px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 500;
-      margin-bottom: 16px;
+
+    /* Links row */
+    .links-row {
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: space-between;
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      font-size: 13px;
+      color: var(--text-muted);
     }
-    .login-footer {
-      text-align: center;
-      margin-top: 24px;
-      font-size: 12px;
-      color: #6b7280;
+
+    .links-row a {
+      color: #818cf8;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.15s ease;
     }
-    .security-badge {
+
+    .links-row a:hover {
+      color: #a5b4fc;
+      text-decoration: underline;
+    }
+
+    /* Feature Pills */
+    .features-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 22px;
+      flex-wrap: wrap;
+    }
+
+    .feature-tag {
+      font-size: 11.5px;
+      color: var(--text-sub);
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      padding: 5px 12px;
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 4px 10px;
       border-radius: 20px;
-      margin-top: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
   </style>
 </head>
 <body>
 
-  <div class="login-container">
-    <div class="login-card">
-      <div class="login-brand">
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="brand-header">
         <div class="brand-icon-wrap">
-          <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="36" height="36" aria-hidden="true">
             <rect width="24" height="24" rx="6" fill="#5865F2"/>
             <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z" transform="translate(1.2 1.2) scale(0.9)" fill="#fff"/>
             <circle cx="7" cy="7" r="1.5" fill="#5865F2" transform="translate(1.2 1.2) scale(0.9)"/>
           </svg>
         </div>
-        <h1 class="login-title">INDRA BOT SYSTEM</h1>
-        <p class="login-subtitle">Sign in with your Admin credentials to access the management dashboard.</p>
+        <h1 class="brand-title">INDRA BOT SYSTEM</h1>
+        <p class="brand-subtitle">Cloud Multi-Tenant Dashboard &bull; Sign in to continue</p>
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          <span>System Online &bull; v2.0</span>
+        </div>
       </div>
 
-      <div id="loginAlert" class="login-error" {% if not error %}style="display: none;"{% endif %}>
+      <div id="loginAlert" class="alert-box" {% if not error %}style="display: none;"{% endif %}>
         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
         <span id="loginAlertText">{{ error or 'Invalid email or password.' }}</span>
       </div>
 
-      <form class="login-form" id="loginForm" method="POST" action="/login">
+      <form class="auth-form" id="loginForm" method="POST" action="/login">
         <div class="form-group">
-          <label for="adminEmail">Admin Email</label>
-          <div class="input-wrapper">
+          <label class="form-label" for="adminEmail">Email Address</label>
+          <div class="input-wrap">
             <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-            <input type="email" id="adminEmail" name="email" class="form-input" placeholder="admin@indra.gg" required autocomplete="email" autofocus>
+            <input type="email" id="adminEmail" name="email" class="form-input" placeholder="name@domain.com" required autocomplete="email" autofocus>
           </div>
         </div>
 
         <div class="form-group">
-          <label for="adminPassword">Password</label>
-          <div class="input-wrapper">
+          <label class="form-label" for="adminPassword">Password</label>
+          <div class="input-wrap">
             <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-            <input type="password" id="adminPassword" name="password" class="form-input" placeholder="Enter your admin password" required autocomplete="current-password">
-            <button type="button" class="toggle-pwd" id="togglePwdBtn" title="Show / Hide Password" aria-label="Toggle password visibility">
+            <input type="password" id="adminPassword" name="password" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
+            <button type="button" class="btn-toggle-pwd" id="togglePwdBtn" title="Toggle password visibility">
               <svg id="eyeIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             </button>
           </div>
         </div>
 
-        <button type="submit" class="btn-login" id="submitBtn">
-          <span>Sign In</span>
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        <button type="submit" class="btn-submit" id="submitBtn">
+          <span>Sign In to Studio</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
         </button>
       </form>
 
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 18px; font-size: 13px; color: var(--text-muted);">
-        <span>Have a license key?</span>
-        <a href="/register" style="color: #5865F2; text-decoration: none; font-weight: 600;">Register Account &rarr;</a>
+      <div class="links-row">
+        <span>Have a License Key?</span>
+        <a href="/register">Register Account &rarr;</a>
       </div>
 
-      <div class="login-footer">
-        <div class="security-badge">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="#43b581"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-          <span>End-to-End Session Protection</span>
-        </div>
+      <div class="features-row">
+        <span class="feature-tag">&#9889; Multi-Tenant</span>
+        <span class="feature-tag">&#128274; Isolated Sandbox</span>
+        <span class="feature-tag">&#128273; Zero-Storage CDN</span>
       </div>
     </div>
   </div>
 
   <script>
-    // Password visibility toggle
-    const pwdInput = document.getElementById('adminPassword');
-    const toggleBtn = document.getElementById('togglePwdBtn');
-    toggleBtn.addEventListener('click', () => {
-      const isPwd = pwdInput.getAttribute('type') === 'password';
-      pwdInput.setAttribute('type', isPwd ? 'text' : 'password');
-      toggleBtn.style.color = isPwd ? '#5865F2' : '#64748b';
-    });
-
-    // AJAX submit for instant feedback without full page flash
     const form = document.getElementById('loginForm');
     const alertBox = document.getElementById('loginAlert');
     const alertText = document.getElementById('loginAlertText');
     const submitBtn = document.getElementById('submitBtn');
+    const togglePwdBtn = document.getElementById('togglePwdBtn');
+    const pwdInput = document.getElementById('adminPassword');
+    const eyeIcon = document.getElementById('eyeIcon');
+
+    togglePwdBtn.addEventListener('click', () => {
+      const isPwd = pwdInput.type === 'password';
+      pwdInput.type = isPwd ? 'text' : 'password';
+      eyeIcon.innerHTML = isPwd 
+        ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>'
+        : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       alertBox.style.display = 'none';
+
+      const email = document.getElementById('adminEmail').value.trim();
+      const password = pwdInput.value;
+
       submitBtn.disabled = true;
-      submitBtn.querySelector('span').textContent = 'Verifying...';
+      submitBtn.querySelector('span').textContent = 'Authenticating...';
 
       try {
         const res = await fetch('/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: document.getElementById('adminEmail').value.trim(),
-            password: pwdInput.value
-          })
+          body: JSON.stringify({ email, password })
         });
         const data = await res.json();
         if (data.ok) {
-          submitBtn.querySelector('span').textContent = 'Success! Redirecting...';
-          submitBtn.style.background = '#43b581';
-          window.location.href = '/';
+          submitBtn.querySelector('span').textContent = 'Access Granted! Redirecting...';
+          submitBtn.style.background = '#10B981';
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 450);
         } else {
-          alertText.textContent = data.error || 'Invalid admin credentials.';
+          alertText.textContent = data.error || 'Invalid credentials.';
           alertBox.style.display = 'flex';
           submitBtn.disabled = false;
-          submitBtn.querySelector('span').textContent = 'Sign In';
+          submitBtn.querySelector('span').textContent = 'Sign In to Studio';
         }
       } catch (err) {
-        alertText.textContent = 'Connection error. Please try again.';
-        alertBox.style.display = 'flex';
-        submitBtn.disabled = false;
-        submitBtn.querySelector('span').textContent = 'Sign In';
+        // Form fallback
+        form.submit();
       }
     });
   </script>
