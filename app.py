@@ -150,18 +150,27 @@ SEED_LICENSES = [
 # ---------------------------------------------------------------------------
 
 def get_admin_credentials():
-    """Returns dict with 'email' and 'password_hash' (or fallback to .env)."""
+    """Return stored admin credentials or defaults from .env."""
+    load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"), override=True)
+    env_email = (os.getenv("ADMIN_EMAIL") or "").strip()
+    env_password = (os.getenv("ADMIN_PASSWORD") or "").strip()
+
     if os.path.isfile(ADMIN_FILE):
         try:
             with open(ADMIN_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 if isinstance(data, dict) and data.get("email"):
+                    if env_email and env_email.lower() != data.get("email", "").lower():
+                        data["email"] = env_email
+                        if env_password:
+                            data["password_hash"] = generate_password_hash(env_password)
+                        save_admin_credentials(data["email"], env_password)
                     return data
         except Exception:
             pass
     # Fallback to .env
-    email = (os.getenv("ADMIN_EMAIL") or "admin@indra.gg").strip()
-    password = (os.getenv("ADMIN_PASSWORD") or "indra2026!").strip()
+    email = env_email or "admin@indra.gg"
+    password = env_password or "indra2026!"
     return {
         "email": email,
         "password_hash": generate_password_hash(password)
@@ -210,32 +219,46 @@ def save_licenses(licenses_list):
 
 def load_users():
     """Load users from data/users.json or initialize with master admin."""
+    users = []
     if os.path.isfile(USERS_FILE):
         try:
             with open(USERS_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 if isinstance(data, dict) and isinstance(data.get("users"), list):
-                    return data.get("users")
-                if isinstance(data, list):
-                    return data
+                    users = data.get("users")
+                elif isinstance(data, list):
+                    users = data
         except Exception:
             pass
+
     admin_creds = get_admin_credentials()
     now = datetime.now().isoformat(timespec="seconds")
-    initial = [
-        {
+    admin_email = str(admin_creds.get("email") or os.getenv("ADMIN_EMAIL") or "admin@indra.gg").strip().lower()
+    admin_hash = admin_creds.get("password_hash")
+
+    found_admin = False
+    for u in users:
+        if u.get("id") == "admin":
+            u["email"] = admin_email
+            if admin_hash:
+                u["password_hash"] = admin_hash
+            found_admin = True
+            break
+
+    if not found_admin:
+        users.insert(0, {
             "id": "admin",
-            "email": str(admin_creds.get("email", "admin@indra.gg")).lower(),
-            "password_hash": admin_creds.get("password_hash"),
+            "email": admin_email,
+            "password_hash": admin_hash,
             "role": "admin",
             "status": "active",
             "license_key": "MASTER-KEY",
             "created_at": now,
             "last_login": now,
-        }
-    ]
-    save_users(initial)
-    return initial
+        })
+        save_users(users)
+
+    return users
 
 def save_users(users_list):
     """Save users list to data/users.json."""
@@ -730,24 +753,31 @@ def login_submit():
     email = str(data.get("email") or "").strip().lower()
     password = str(data.get("password") or "")
 
+    # Always re-read .env with override=True so changes in .env take effect immediately!
+    load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"), override=True)
+    env_email = (os.getenv("ADMIN_EMAIL") or "").strip().lower()
+    env_password = (os.getenv("ADMIN_PASSWORD") or "").strip()
+
     # 1. Check root admin
     creds = get_admin_credentials()
     admin_email = str(creds.get("email") or "").strip().lower()
     pwd_hash = creds.get("password_hash", "")
-    env_password = (os.getenv("ADMIN_PASSWORD") or "").strip()
 
-    is_root_admin = (email == admin_email and (
-        check_password_hash(pwd_hash, password) or (env_password and password == env_password)
-    ))
+    is_root_admin = (
+        (admin_email and email == admin_email and (check_password_hash(pwd_hash, password) or (env_password and password == env_password)))
+        or
+        (env_email and email == env_email and (password == env_password or (pwd_hash and check_password_hash(pwd_hash, password))))
+    )
 
     if is_root_admin:
+        active_email = admin_email or env_email or email
         session["authenticated"] = True
         session["user_id"] = "admin"
-        session["admin_email"] = creds.get("email")
-        session["email"] = creds.get("email")
+        session["admin_email"] = active_email
+        session["email"] = active_email
         session["role"] = "admin"
         if request.is_json:
-            return jsonify({"ok": True, "email": creds.get("email"), "role": "admin"})
+            return jsonify({"ok": True, "email": active_email, "role": "admin"})
         return redirect("/")
 
     # 2. Check registered users in users.json
