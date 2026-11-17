@@ -951,7 +951,7 @@ function renderPreflight(build) {
     : "Post the listing to the selected channels";
 
   const testButton = $("#btn-send-test");
-  testButton.disabled = Boolean(state.editContext) || !state.config.test_channel_set;
+  testButton.disabled = Boolean(state.editContext) || errors.length > 0 || !state.config.test_channel_set;
   testButton.title = state.config.test_channel_set
     ? `Post once to your test channel (#${state.config.test_channel_id})`
     : "Set TEST_CHANNEL_ID in the .env file to use this";
@@ -960,6 +960,11 @@ function renderPreflight(build) {
 /* Re-render soon - the spec asks for a ~300ms debounce so typing stays
    smooth and the server is not flooded with preview requests. */
 function refreshPreviewSoon() {
+  // Invalidate in-flight responses immediately, not after the debounce.
+  previewSequence++;
+  state.lastBuild = null;
+  $("#btn-send").disabled = true;
+  $("#btn-send-test").disabled = true;
   clearTimeout(previewTimer);
   previewTimer = setTimeout(renderPreview, 300);
 }
@@ -1228,7 +1233,7 @@ function renderPlansEditor() {
       refreshPreviewSoon();
     });
 
-    row.append(grip, labelInput, priceInput, oldInput, badgeInput, remove);
+    row.append(labelInput, priceInput, oldInput, badgeInput, remove);
     holder.appendChild(row);
   });
 
@@ -1240,7 +1245,7 @@ function renderPlansEditor() {
       showToast("10 plans is the maximum - more would make the card unreadable.", "info");
       return;
     }
-    plans.push({ id: "plan-" + newId(), label: "", price: "", oldPrice: "", badge: "" });
+    plans.push({ id: "plan-" + newId(), label: `Plan ${plans.length + 1}`, price: "", oldPrice: "", badge: "" });
     renderPlansEditor();
     refreshPreviewSoon();
     const rows = $$("#plansEditor .plan-row");
@@ -1414,7 +1419,8 @@ function selectedChannels() {
 async function sendListing() {
   if (state.editContext) { updateSentMessage(); return; }   // editing mode
   const build = state.lastBuild;
-  if (build && build.errors && build.errors.length) {
+  if (!build) { showToast("Wait for the preview to finish updating.", "info"); return; }
+  if (build.errors && build.errors.length) {
     showToast("Fix the problems under the preview first.", "error");
     return;
   }
@@ -1431,8 +1437,8 @@ async function sendListing() {
     bot_id: selectedBotId(),
   });
 
-  button.disabled = false;
   button.innerHTML = 'Send <span class="kbd">Ctrl+↵</span>';
+  if (state.lastBuild) renderPreflight(state.lastBuild);
 
   if (result.ok) {
     const sentCount = result.results.filter((r) => r.ok).length;
@@ -1449,7 +1455,8 @@ async function sendListing() {
 /* Send test - to the TEST_CHANNEL_ID from .env only. */
 async function sendTest() {
   const build = state.lastBuild;
-  if (build && build.errors && build.errors.length) {
+  if (!build) { showToast("Wait for the preview to finish updating.", "info"); return; }
+  if (build.errors && build.errors.length) {
     showToast("Fix the problems under the preview first.", "error");
     return;
   }
@@ -1462,8 +1469,8 @@ async function sendTest() {
     bot_id: selectedBotId(),
   });
 
-  button.disabled = false;
   button.textContent = "Send test";
+  if (state.lastBuild) renderPreflight(state.lastBuild);
 
   if (result.ok) {
     showToast("Test sent - check your test channel in Discord!", "success");
@@ -1579,7 +1586,8 @@ async function updateSentMessage() {
   if (!state.editContext) return;
   const context = state.editContext;
   const build = state.lastBuild;
-  if (build && build.errors && build.errors.length) {
+  if (!build) { showToast("Wait for the preview to finish updating.", "info"); return; }
+  if (build.errors && build.errors.length) {
     showToast("Fix the problems under the preview first.", "error");
     return;
   }

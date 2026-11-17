@@ -149,7 +149,11 @@ def _norm_plans(content):
                 continue
             label = str(item.get("label") or "").strip()[:80]
             if not label:
-                continue
+                # Do not silently discard a price entered before a plan name.
+                if any(str(item.get(key) or "").strip() for key in ("price", "oldPrice", "badge")):
+                    label = f"Plan {len(plans) + 1}"
+                else:
+                    continue
             plans.append({
                 "id": str(item.get("id") or "")[:40] or ("plan-" + str(len(plans) + 1)),
                 "label": label,

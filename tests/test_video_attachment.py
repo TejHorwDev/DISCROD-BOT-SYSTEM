@@ -45,6 +45,12 @@ class VideoUploadTests(unittest.TestCase):
     def upload(self, data, name):
         return self.client.post("/api/upload-video", data={"file": (io.BytesIO(data), name)})
 
+    def test_save_keeps_unnamed_plan_price(self):
+        with patch.object(application, "get_settings", return_value={"active_bot_id": "bot"}):
+            saved = application._clean_product({"id": "p1", "name": "Product", "plans": [{"label": "", "price": "9.99"}]})
+        self.assertEqual(saved["plans"][0]["label"], "Plan 1")
+        self.assertEqual(saved["plans"][0]["price"], "9.99")
+
     def test_video_upload_and_resolve(self):
         response = self.upload(b"\x00\x00\x00\x18ftypisom" + b"data", "clip.mp4")
         self.assertEqual(response.status_code, 200)
