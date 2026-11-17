@@ -1951,3 +1951,10 @@ pre.json { font-variant-numeric: normal; }
 /* Find a sent message quickly without changing or deleting history. */
 .history-filters { display: grid; grid-template-columns: minmax(0, 2fr) minmax(160px, 1fr); gap: 12px; margin-top: 16px; }
 @media (max-width: 600px) { .history-filters { grid-template-columns: 1fr; } }
+
+.custom-field-card { display: grid; gap: 10px; padding: 14px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--card-2); }
+.custom-field-card textarea { width: 100%; resize: vertical; }
+.preview-size-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px 14px; font-size: 12px; }
+.preview-size { border: 1px solid var(--border); background: transparent; color: inherit; border-radius: 6px; padding: 5px 9px; cursor: pointer; }
+.preview-size.active { background: #5865f2; color: white; border-color: #5865f2; }
+#previewBody.preview-mobile { max-width: 375px; margin: 0 auto; }

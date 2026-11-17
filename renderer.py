@@ -215,6 +215,19 @@ def normalize_content(content):
     content["ticketLineText"] = str(content.get("ticketLineText") or "").strip()
     content["planLayout"] = content.get("planLayout") if content.get("planLayout") in ("list", "stacked", "grid") else "list"
 
+    raw_fields = content.get("customFields")
+    content["customFields"] = []
+    if isinstance(raw_fields, list):
+        for field in raw_fields[:10]:
+            if isinstance(field, dict):
+                name = str(field.get("name") or "").strip()
+                value = str(field.get("value") or "").strip()
+                if name or value:
+                    content["customFields"].append({
+                        "name": name, "value": value,
+                        "inline": field.get("inline") in (True, "true", 1),
+                    })
+
     raw_buttons = content.get("buttons")
     buttons = []
     if isinstance(raw_buttons, list):
@@ -527,9 +540,15 @@ def _build_product_pieces(content, style, settings):
         if content["refund"]:
             block(heading("🛡️ Refund & support"), content["refund"])
 
+    # Custom fields are placed before the ticket so the call to action stays last.
+    for field in content["customFields"]:
+        if field["name"] and field["value"]:
+            fields.append({"name": heading(field["name"]), "value": field["value"],
+                           "inline": field["inline"]})
+
     ticket = ticket_line(content, settings)
     if ticket:
-        if content["preset"] == "minimal":
+        if content["preset"] == "minimal" and not fields:
             description += "\n\n" + ticket
         else:
             fields.append({"name": DIVIDER, "value": ticket, "inline": False})
@@ -810,6 +829,12 @@ def render_content(content, bot=None, theme=None, settings=None):
         errors.append("Give the product a name (it becomes the embed title).")
     if content["kind"] == "section" and not content["title"] and not content["body"]:
         errors.append("Write a title or some text for this section first.")
+    if content["kind"] == "product":
+        for field in content["customFields"]:
+            if not field["name"] or not field["value"]:
+                errors.append("Every custom field needs both a heading and a value.")
+        if not content["plans"] or any(not p["price"] for p in content["plans"]):
+            warnings.append("A blank price is displayed as Free. Enter a price if this product is not free.")
     for field in pieces["fields"]:
         if char_count(field["name"]) > LIMITS["fieldName"]:
             errors.append("A field name is longer than 256 characters.")
@@ -878,6 +903,11 @@ def render_content(content, bot=None, theme=None, settings=None):
             field = remaining.pop(0)
             group.append(field)
             group_chars += char_count(field["name"]) + char_count(field["value"])
+        if not group:
+            # Invalid oversized fields still need a preview and error response;
+            # always consume one instead of looping forever.
+            group.append(remaining.pop(0))
+            group_chars = char_count(group[0]["name"]) + char_count(group[0]["value"])
         embeds.append({"color": pieces["color"], "fields": group})
         splits.append({"reason": "The fields did not fit on one card - the "
                                  "rest moved to a follow-up embed.",

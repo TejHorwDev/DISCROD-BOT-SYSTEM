@@ -213,7 +213,7 @@
 
           <div class="form-toolbar">
             <div class="save-row">
-              <input id="f-name" type="text" placeholder="Product name (shown as the embed title)" aria-label="Product name">
+              <input id="f-name" type="text" placeholder="Product name — required (embed title)" aria-label="Product name (required)" required>
               <button id="btn-save-product" class="btn" type="button" title="Save this product to your library">💾 Save</button>
               <button id="btn-duplicate-product" class="btn btn-ghost" type="button" title="Save a copy of this product">Duplicate</button>
               <button id="btn-new-product" class="btn btn-ghost" type="button" title="Start a blank product">New</button>
@@ -457,6 +457,15 @@
             </div>
           </details>
 
+          <details class="section">
+            <summary>✨ Custom embed fields</summary>
+            <div class="sec-body">
+              <p class="muted small">Add up to 10 extra sections, such as compatibility, payment methods or support. Use inline to place fields side by side where space allows. Discord Markdown is supported in values.</p>
+              <div id="customFieldsEditor"></div>
+              <button id="addCustomField" class="btn btn-ghost" type="button">+ Add custom field</button>
+            </div>
+          </details>
+
           <!-- ---------- MESSAGE & FOOTER ---------- -->
           <details class="section">
             <summary><span class="sec-n">5</span> Message &amp; footer</summary>
@@ -583,6 +592,12 @@
             </div>
 
             <!-- The Discord-style chat area -->
+            <div class="preview-size-controls" role="group" aria-label="Preview width">
+              <span>Preview width</span>
+              <button class="preview-size active" type="button" data-preview-size="desktop" aria-pressed="true">Desktop</button>
+              <button class="preview-size" type="button" data-preview-size="mobile" aria-pressed="false">Mobile</button>
+              <span class="muted small">Approximate appearance; Discord may display it differently.</span>
+            </div>
             <div id="previewBody" class="dc-chat" aria-live="polite"></div>
 
             <!-- Pre-flight: what will happen when you press Send -->
