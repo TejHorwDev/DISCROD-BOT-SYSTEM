@@ -95,12 +95,17 @@ line) on the left, the live Discord preview + pre-flight checks on the
 right. Everything you change is re-rendered by the server after ~0.3s -
 the preview is never a guess, it is the actual payload.
 
-The four layout presets change how the same data is arranged:
+The layout presets change how the same data is arranged:
 
 * **Modern Card** - colored status bar, fields in a grid
+* **Compact Grid** - pricing plans side by side to reduce vertical space
 * **Minimal** - everything in the description, no fields
 * **Big Banner** - huge price headline at the top
 * **Flash Sale** - red accent, discount + countdown in your face
+
+Discord determines the actual embed width for each client; bots cannot force
+an embed wider. Compact Grid uses the space available, and removing a thumbnail
+can give the text more room. Narrow screens may wrap the fields.
 
 ### Video attachments and arrangement
 In the product Builder, open **Video attachment** to upload one MP4 or WEBM

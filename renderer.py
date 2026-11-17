@@ -27,7 +27,7 @@ WHAT IS A CONTENT MODEL?
   A dictionary that describes the message, not its Discord layout:
 
     { "kind": "product" | "section", "name"/"title", "tagline"/"body",
-      "preset": "modern" | "minimal" | "banner" | "flash"     (products)
+      "preset": "modern" | "minimal" | "banner" | "flash" | "compact"     (products)
                 "clean" | "announcement" | "rules" | "update" (sections)
       "plans": [ {"label": "1 Month Key", "price": "4.99",
                   "oldPrice": "7.99", "badge": "POPULAR"} ],
@@ -510,6 +510,31 @@ def _build_product_pieces(content, style, settings):
             description += ("\n\n" if description else "") + plans_block
         if features:
             description += "\n\n" + features
+    elif content["preset"] == "compact":
+        # Discord controls the embed's width; inline fields use its available
+        # horizontal space for plans instead of putting each on a separate line.
+        for plan in content["plans"]:
+            badge = f" `[{plan['badge']}]`" if plan.get("badge") else ""
+            inline(heading(plan["label"]), _plan_price_display(plan, content["currency"]) + badge)
+        if not content["plans"]:
+            inline(heading("💰 Price"), price_display(content))
+        if category:
+            inline(heading("🏷️ Category"), category)
+        if stock or content["status"] == "limited":
+            inline(heading("📦 Stock"), stock or "Limited - while stocks last")
+        if content["license"]:
+            inline(heading("🔑 License"), content["license"])
+        if sale_field:
+            inline(heading("⏰ Sale ends"), sale_field)
+        inline(heading("🚚 Delivery"), delivery_label(content))
+        if features:
+            block(heading("✨ Features"), features)
+        if content["included"]:
+            block(heading("📦 What's included"), content["included"])
+        if content["requirements"]:
+            block(heading("🖥️ Requirements"), content["requirements"])
+        if content["refund"]:
+            block(heading("🛡️ Refund & support"), content["refund"])
     else:
         if category:
             inline(heading("🏷️ Category"), category)
