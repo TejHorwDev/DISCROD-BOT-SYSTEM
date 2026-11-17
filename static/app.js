@@ -176,6 +176,7 @@ function newProduct() {
     deliveryHours: "",
     license: "",
     features: "",
+    customFields: [],
     bulletStyle: "checkmark",
     bulletCustom: "",
     included: "",
@@ -742,36 +743,33 @@ function renderDiscordMessage(payload, identity, body) {
        combined image grid - exactly how Discord groups them */
     const grouping = embeds.length > 1 && embeds.every((one) => one.url === GALLERY_URL);
     let firstNode = null;
+    const embedNodes = [];
 
     if (grouping) {
       const rendered = renderEmbedNode(embeds[0]);
       firstNode = rendered.node;
+      embedNodes.push(rendered.node);
       embedsBox.appendChild(rendered.node);
       appendImageGrid(rendered.node, embeds);
     } else {
       for (const one of embeds) {
         const rendered = renderEmbedNode(one);
         if (!firstNode) firstNode = rendered.node;
+        embedNodes.push(rendered.node);
         appendImageGrid(rendered.node, [one]);
         embedsBox.appendChild(rendered.node);
       }
     }
 
-    /* footer + timestamp belong to the LAST content embed - that is the
-       card Discord actually shows them under */
-    const last = embeds[embeds.length - 1];
-    const withFooter = grouping ? embeds[0] : last;
-    if (withFooter.footer || withFooter.timestamp) {
+    /* Each footer belongs to its own embed, including split messages. */
+    embeds.forEach((embed, index) => {
+      if (!embed.footer && !embed.timestamp) return;
       const footer = el("div", "dc-embed-footer");
-      if (withFooter.footer && withFooter.footer.text) {
-        footer.appendChild(document.createTextNode(withFooter.footer.text));
-      }
-      if (withFooter.footer && withFooter.footer.text && withFooter.timestamp) {
-        footer.appendChild(el("span", "sep", "•"));
-      }
-      if (withFooter.timestamp) footer.appendChild(el("span", null, nowTimeLabel()));
-      (firstNode || embedsBox).appendChild(footer);
-    }
+      if (embed.footer && embed.footer.text) footer.appendChild(document.createTextNode(embed.footer.text));
+      if (embed.footer && embed.footer.text && embed.timestamp) footer.appendChild(el("span", "sep", "•"));
+      if (embed.timestamp) footer.appendChild(el("span", null, nowTimeLabel()));
+      (grouping ? firstNode : embedNodes[index]).appendChild(footer);
+    });
 
     messageBody.appendChild(embedsBox);
   }
@@ -1011,6 +1009,7 @@ function renderForm() {
   updateConditionalFields();
   renderImageSlots();
   renderPlansEditor();
+  renderCustomFieldsEditor();
   renderButtonsEditor();
 }
 
@@ -1096,6 +1095,39 @@ function fillThemeSelect(select, firstLabel) {
     option.value = theme.id;
     select.appendChild(option);
   }
+}
+
+/* Extra embed fields belong to the product and are saved with it. */
+function renderCustomFieldsEditor() {
+  const holder = $("#customFieldsEditor");
+  if (!holder) return;
+  if (!Array.isArray(state.product.customFields)) state.product.customFields = [];
+  const fields = state.product.customFields;
+  holder.replaceChildren();
+  fields.forEach((field, index) => {
+    const row = el("div", "custom-field-card");
+    const header = el("div", "row-between");
+    header.appendChild(el("strong", null, `Field ${index + 1}`));
+    const remove = el("button", "btn btn-sm btn-danger", "Remove");
+    remove.type = "button";
+    remove.addEventListener("click", () => { fields.splice(index, 1); renderCustomFieldsEditor(); refreshPreviewSoon(); });
+    header.appendChild(remove);
+    const name = el("input");
+    name.type = "text"; name.placeholder = "Heading, e.g. Compatibility";
+    name.setAttribute("aria-label", `Field ${index + 1} heading`);
+    name.maxLength = 256; name.value = field.name || "";
+    name.addEventListener("input", () => { field.name = name.value; refreshPreviewSoon(); });
+    const value = el("textarea");
+    value.placeholder = "Details, e.g. Windows 10 and 11"; value.rows = 3;
+    value.setAttribute("aria-label", `Field ${index + 1} details`);
+    value.maxLength = 1024; value.value = field.value || "";
+    value.addEventListener("input", () => { field.value = value.value; refreshPreviewSoon(); });
+    const inlineLabel = el("label", "check-label");
+    const inline = el("input"); inline.type = "checkbox"; inline.checked = truthy(field.inline);
+    inline.addEventListener("change", () => { field.inline = inline.checked; refreshPreviewSoon(); });
+    inlineLabel.append(inline, document.createTextNode(" Display side by side"));
+    row.append(header, name, value, inlineLabel); holder.appendChild(row);
+  });
 }
 
 /* ---------- the pricing plans editor ---------- */
@@ -2603,10 +2635,26 @@ function bindPreviewToolbar() {
   $("#pv-close").addEventListener("click", closeOverlay);
   $("#fabPreview").addEventListener("click", openOverlay);
 
+  $("#addCustomField").addEventListener("click", () => {
+    if (!Array.isArray(state.product.customFields)) state.product.customFields = [];
+    if (state.product.customFields.length >= 10) { showToast("You can add up to 10 custom fields.", "info"); return; }
+    state.product.customFields.push({ name: "", value: "", inline: false });
+    renderCustomFieldsEditor();
+    $("#customFieldsEditor .custom-field-card:last-child input[type=text]").focus();
+  });
+  for (const button of $$(".preview-size")) button.addEventListener("click", () => {
+    $("#previewBody").classList.toggle("preview-mobile", button.dataset.previewSize === "mobile");
+    for (const choice of $$(".preview-size")) {
+      const active = choice === button;
+      choice.classList.toggle("active", active);
+      choice.setAttribute("aria-pressed", String(active));
+    }
+  });
+
   /* send buttons */
   $("#btn-send").addEventListener("click", sendListing);
   $("#btn-send-test").addEventListener("click", sendTest);
-  $("#btn-copy-json").addEventListener("click", showCopyJson);
+  $("#btn-copy-json").addEventListener("click", () => showCopyJson());
 
   /* editing banner */
   $("#btnUpdateMessage").addEventListener("click", updateSentMessage);

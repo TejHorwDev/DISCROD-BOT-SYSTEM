@@ -71,7 +71,7 @@ without editing `.env` by hand.
 
 1. At the top: pick your **server** and tick one or more **channels**.
 2. **Builder** tab: name your product, add pricing plans, features, images.
-3. Watch the **live preview** on the right - it is the exact message.
+3. Watch the **live preview** on the right - it is built from the same payload as the message. Use Desktop / Mobile to check the layout at different widths.
 4. **Send** (or **Send test** first - see "Test channel" below).
 
 ### 5. Optional: the test channel
@@ -101,6 +101,15 @@ The four layout presets change how the same data is arranged:
 * **Minimal** - everything in the description, no fields
 * **Big Banner** - huge price headline at the top
 * **Flash Sale** - red accent, discount + countdown in your face
+
+### Custom embed fields and preview
+In the Builder, open **Custom embed fields** to add up to 10 extra headings
+and details, such as compatibility, payment methods or support. Select
+**Display side by side** for inline fields. They are saved with the product,
+rendered by the server and included when you send or update a message. Both a
+heading and details are required for each non-empty field. The preview offers
+an approximate mobile width; actual Discord clients may render differently.
+An empty price displays as **Free**, and the preview warns you before sending.
 
 ### Library
 Everything you saved, with thumbnails and plan summaries. Load, duplicate,
