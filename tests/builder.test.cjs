@@ -114,3 +114,17 @@ test('a delayed old preview cannot replace newer edits during debounce', async (
     assert.deepEqual(errors, []);
   } finally { dom.window.close(); }
 });
+
+test('compact grid preset updates the product sent for preview', async () => {
+  const { dom, w, document: d, errors, requests } = await dashboard();
+  try {
+    const compact = d.querySelector('input[name=preset][value=compact]');
+    assert.ok(compact);
+    compact.checked = true;
+    compact.dispatchEvent(new w.Event('change', { bubbles: true }));
+    await wait(400);
+    const preview = requests.filter(r => r.url === '/api/preview' && r.payload.content.kind === 'product').at(-1);
+    assert.equal(preview.payload.content.preset, 'compact');
+    assert.deepEqual(errors, []);
+  } finally { dom.window.close(); }
+});

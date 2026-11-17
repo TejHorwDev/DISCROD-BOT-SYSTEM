@@ -59,6 +59,33 @@ class PricingRegressionTests(unittest.TestCase):
         self.assertTrue(any("9.99" in field["value"] for message in result["messages"]
                             for embed in message["embeds"] for field in embed.get("fields", [])))
 
+class CompactLayoutTests(unittest.TestCase):
+    def test_plan_fields_and_details_preserved(self):
+        content = {"name": "Example", "preset": "compact", "currency": "$", "status": "limited",
+                   "stock": "5", "category": "Software", "license": "Key", "delivery": "manual",
+                   "plans": [{"label": "Lifetime", "price": "12", "badge": "VIP"},
+                             {"label": "30 days", "price": "7"},
+                             {"label": "15 days", "price": "4"},
+                             {"label": "7 days", "price": "3"}],
+                   "features": "First feature\nSecond feature", "included": "Support",
+                   "requirements": "Windows", "refund": "Contact support", "ticketLineMode": "show"}
+        result = renderer.render_content(content)
+        self.assertTrue(result["ok"], result["errors"])
+        fields = [f for m in result["messages"] for e in m["embeds"] for f in e.get("fields", [])]
+        self.assertEqual([f["name"] for f in fields[:4]], ["Lifetime", "30 days", "15 days", "7 days"])
+        self.assertTrue(all(f["inline"] for f in fields[:4]))
+        self.assertIn("$12", fields[0]["value"])
+        self.assertIn("VIP", fields[0]["value"])
+        self.assertTrue(any("First feature" in f["value"] for f in fields))
+        self.assertTrue(any("Contact support" in f["value"] for f in fields))
+        self.assertEqual(fields[-1]["name"], renderer.DIVIDER)
+
+    def test_empty_plans_show_free_and_warn(self):
+        result = renderer.render_content({"name": "Example", "preset": "compact", "ticketLineMode": "hide"})
+        self.assertTrue(result["ok"], result["errors"])
+        self.assertTrue(any("Free" in f["value"] for m in result["messages"] for e in m["embeds"] for f in e.get("fields", [])))
+        self.assertTrue(any("Free" in warning for warning in result["warnings"]))
+
 
 if __name__ == "__main__":
     unittest.main()
