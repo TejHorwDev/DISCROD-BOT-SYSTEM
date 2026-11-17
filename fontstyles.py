@@ -1,5 +1,5 @@
 """
-fontstyles.py - the 11 Unicode "fancy text" styles, shared by everything.
+fontstyles.py - the Unicode "fancy text" styles, shared by everything.
 
 What is this about?
   Discord messages are plain text, so you cannot pick a real font for them.
@@ -12,13 +12,16 @@ What is this about?
   and the PAGE (the style pickers in the Builder and Theme Studio) use
   this exact same list, so what you pick is always what gets posted.
 
-The 11 styles:
+The available styles:
   none          - normal letters (turns styling off)
   bold          - 𝐁𝐨𝐥𝐝
   italic        - 𝘐𝘵𝘢𝘭𝘪𝘤
   bold_italic   - 𝘽𝙤𝙡𝙙 𝙄𝙩𝙖𝙡𝙞𝙘
   script        - 𝒮𝒸𝓇𝒾𝓅𝓉
   bold_script   - 𝓑𝓸𝓵𝓭 𝓢𝓬𝓻𝓲𝓹𝓽
+  sans          - Sans serif
+  sans_bold     - Bold sans serif
+  bold_fraktur  - Bold gothic
   fraktur       - 𝔉𝔯𝔞𝔨𝔱𝔲𝔯
   double        - 𝔻𝕠𝕦𝕓𝕝𝕖
   mono          - 𝙼𝚘𝚗𝚘𝚜𝚙𝚊𝚌𝚎
@@ -76,9 +79,9 @@ def _alphabet(upper_start, lower_start, digit_start=None,
 # --- the four alphabets Unicode keeps in the old "letterlike symbols" block
 # (keyed by letter index: 0=A, 1=B, 2=C ...)
 _SCRIPT_HOLES = {1: 0x212C, 4: 0x2130, 5: 0x2131, 7: 0x210B, 8: 0x2110,
-                 11: 0x2112, 17: 0x211B}                     # B E F H I L R
-_FRAKTUR_HOLES = {1: 0x212D, 7: 0x210C, 8: 0x2111, 17: 0x211C, 25: 0x2128}
-_DOUBLE_HOLES = {1: 0x2102, 7: 0x210D, 13: 0x2115, 15: 0x2119,
+                 11: 0x2112, 12: 0x2133, 17: 0x211B}                     # B E F H I L M R
+_FRAKTUR_HOLES = {2: 0x212D, 7: 0x210C, 8: 0x2111, 17: 0x211C, 25: 0x2128}
+_DOUBLE_HOLES = {2: 0x2102, 7: 0x210D, 13: 0x2115, 15: 0x2119,
                  16: 0x211A, 17: 0x211D, 25: 0x2124}         # C H N P Q R Z
 
 # small caps are not a Unicode range - a hand table (x and y have no twin
@@ -91,8 +94,12 @@ _STYLED_TABLES = {
     "bold": _alphabet(0x1D400, 0x1D41A, 0x1D7CE),            # mathematical bold
     "italic": _alphabet(0x1D608, 0x1D622),                   # sans italic
     "bold_italic": _alphabet(0x1D63C, 0x1D656),              # sans bold italic
-    "script": _alphabet(0x1D49C, 0x1D4B6, upper_map=_SCRIPT_HOLES),
+    "script": _alphabet(0x1D49C, 0x1D4B6, upper_map=_SCRIPT_HOLES,
+                        lower_map={4: 0x212F, 6: 0x210A, 14: 0x2134}),
     "bold_script": _alphabet(0x1D4D0, 0x1D4EA),              # bold script (no holes)
+    "sans": _alphabet(0x1D5A0, 0x1D5BA, 0x1D7E2),
+    "sans_bold": _alphabet(0x1D5D4, 0x1D5EE, 0x1D7EC),
+    "bold_fraktur": _alphabet(0x1D56C, 0x1D586),
     "fraktur": _alphabet(0x1D504, 0x1D51E, upper_map=_FRAKTUR_HOLES),
     "double": _alphabet(0x1D538, 0x1D552, 0x1D7D8,
                         upper_map=_DOUBLE_HOLES),
@@ -104,8 +111,8 @@ _STYLED_TABLES = {
                          # digits: (1) U+2460..U+2468, then (0) U+24EA
                          upper_map={}, lower_map={}),
 }
-# circled digits: ① ② ③ ... ⑨ then ⓪  (there is no plain range 0-9)
-_STYLED_TABLES["circled"]["digits"] = _range_chars(0x2460, 9) + chr(0x24EA)
+# circled digits in input order: ⓪ ① ② ... ⑨
+_STYLED_TABLES["circled"]["digits"] = chr(0x24EA) + _range_chars(0x2460, 9)
 
 # friendly names shown in the pickers
 _STYLE_LABELS = {
@@ -115,6 +122,9 @@ _STYLE_LABELS = {
     "bold_italic": "Bold Italic",
     "script": "Script",
     "bold_script": "Bold Script",
+    "sans": "Sans Serif",
+    "sans_bold": "Sans Serif Bold",
+    "bold_fraktur": "Bold Fraktur (gothic)",
     "fraktur": "Fraktur (gothic)",
     "double": "Double-struck",
     "mono": "Monospace",
@@ -126,7 +136,7 @@ _STYLE_LABELS = {
 # The ids in a stable, human-friendly order (used by the pickers).
 STYLE_ORDER = [
     "none", "bold", "italic", "bold_italic", "script", "bold_script",
-    "fraktur", "double", "mono", "smallcaps", "fullwidth", "circled",
+    "sans", "sans_bold", "fraktur", "bold_fraktur", "double", "mono", "smallcaps", "fullwidth", "circled",
 ]
 
 # Final safety net: every table must be exactly 26 + 26 + 10 real letters.
