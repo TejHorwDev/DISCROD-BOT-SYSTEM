@@ -40,12 +40,22 @@ SELLER BOT just makes sure every listing ends with a clickable
 
 ### 2. Start SELLER BOT
 
-* **Windows**: double-click **run.bat**
-* **Mac / Linux**: run **bash run.sh**
+* **Windows**: download the project ZIP from GitHub and **extract it completely**, then double-click **start.bat** in the extracted folder.
+* **Mac / Linux**: run **bash run.sh**.
 
-The first run creates a private Python environment, installs the four
-packages (flask, requests, python-dotenv, pillow) and opens your browser
-at **http://localhost:5000**.
+On Windows, install [Python 3.10 or newer](https://www.python.org/downloads/)
+first and tick **Add Python to PATH** in the installer. The first launch needs
+internet to install the packages; it creates a private `.venv` and a `.env`
+settings file, then opens **http://127.0.0.1:5000**. If the browser does not
+open, visit that address manually. Keep the starter window open; closing it
+stops the app and its scheduled posts. If port 5000 is busy, close the other
+program using it and try again. The Windows starter listens only on this PC.
+
+On a fresh installation, sign in with the example admin email `admin@indra.gg`
+and password `indra2026!`, then change the credentials in Settings. If you
+already have an installation, use your existing credentials. Your `.env` and
+bot tokens are private: never share them. You can add a bot in the dashboard
+without editing `.env` by hand.
 
 ### 3. Add the bot in the app
 
