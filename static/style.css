@@ -1947,3 +1947,7 @@ pre.json { font-variant-numeric: normal; }
   100% { transform: scale(1); }
 }
 
+
+/* Find a sent message quickly without changing or deleting history. */
+.history-filters { display: grid; grid-template-columns: minmax(0, 2fr) minmax(160px, 1fr); gap: 12px; margin-top: 16px; }
+@media (max-width: 600px) { .history-filters { grid-template-columns: 1fr; } }

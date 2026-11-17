@@ -272,7 +272,7 @@ const state = {
 
   // ---- looks ----
   themes: [],                   // every theme (built-ins first)
-  fontstyles: [],               // the 11 Unicode styles (with letter tables)
+  fontstyles: [],               // the Unicode styles (with letter tables)
 
   // ---- multi-bot state ----
   bots: [],                     // the registry from /api/bots (tokens masked)
@@ -331,7 +331,7 @@ let schTimer = null;            // the 1s ticker for the schedule list
    same tables renderer.py uses. That way the little live preview in the
    form always matches what will actually be posted. */
 
-/* Convert text into one of the 11 Unicode styles ("none" = unchanged). */
+/* Convert text into one of the Unicode styles ("none" = unchanged). */
 function applyStyle(text, styleId) {
   if (!text) return text;
   if (!styleId || styleId === "none") return String(text);
@@ -1701,12 +1701,31 @@ function renderHistory() {
   list.replaceChildren();
 
   if (!state.history.length) {
+    $("#histCount").textContent = "";
     list.appendChild(el("p", "muted",
       "Nothing sent yet. Build a product, pick a channel, and press Send (or 'Send test' first)."));
     return;
   }
 
-  for (const entry of state.history) {
+  const query = $("#histSearch").value.trim().toLocaleLowerCase();
+  const filter = $("#histFilter").value;
+  const entries = state.history.filter((entry) => {
+    const searchable = [entry.product_name, entry.channel_name, entry.channel_id,
+      entry.bot_name, entry.message_id, ...(entry.message_ids || [])]
+      .filter(Boolean).join(" ").toLocaleLowerCase();
+    const matchesFilter = filter === "all" ||
+      (filter === "active" && entry.status !== "deleted") ||
+      (filter === "deleted" && entry.status === "deleted") ||
+      (filter === "section" && entry.kind === "section") ||
+      (filter === "product" && entry.kind !== "section");
+    return matchesFilter && searchable.includes(query);
+  });
+  $("#histCount").textContent = `Showing ${entries.length} of ${state.history.length} messages`;
+  if (!entries.length) {
+    list.appendChild(el("p", "muted", "No messages match your search or filter."));
+    return;
+  }
+  for (const entry of entries) {
     const card = el("div", "hist-card" + (entry.status === "deleted" ? " status-deleted" : ""));
     const content = entry.content || entry.product || {};
 
@@ -4669,6 +4688,8 @@ async function init() {
     window.location.href = "/api/products/export";
   });
   $("#btn-refresh-history").addEventListener("click", loadHistory);
+  $("#histSearch").addEventListener("input", renderHistory);
+  $("#histFilter").addEventListener("change", renderHistory);
   $("#sch-create").addEventListener("click", createSchedule);
 
   /* form + settings + preview + bots + sections + plans */

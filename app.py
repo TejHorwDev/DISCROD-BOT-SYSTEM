@@ -63,7 +63,7 @@ What this file does:
        (posting a section uses /api/send with kind "section")
 
      Looks
-       GET  /api/fontstyles           -> the 11 Unicode heading styles
+       GET  /api/fontstyles           -> the Unicode heading styles
        GET/POST /api/themes           -> list / save themes
        POST /api/themes/<id>/duplicate -> copy any theme (built-ins too)
        DELETE /api/themes/<id>       -> delete a CUSTOM theme
@@ -2387,7 +2387,7 @@ def api_sections_delete(section_id):
 @app.get("/api/fontstyles")
 def api_fontstyles():
     """
-    The 11 Unicode heading styles for the pickers in the page - including
+    The Unicode heading styles for the pickers in the page - including
     the letter tables, so the page can show live styled previews exactly
     like the server will render them (one source of truth again).
     """

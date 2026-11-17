@@ -539,7 +539,7 @@
                 <label class="check-label"><input id="f-fancy" type="checkbox"> Fancy text <span class="label-hint">(Unicode letters for the title and headings - overrides the theme)</span></label>
                 <div class="grid-2" id="wrap-fancy" hidden>
                   <div class="field" style="margin:0">
-                    <label for="f-fancy-style">Style <span class="label-hint">(11 available)</span></label>
+                    <label for="f-fancy-style">Style <span class="label-hint">(choose a look for your headings)</span></label>
                     <select id="f-fancy-style">
                       <option value="bold">𝐁𝐨𝐥𝐝</option>
                     </select>
@@ -812,6 +812,11 @@
             <button id="btn-refresh-history" class="btn btn-ghost" type="button">Refresh</button>
           </div>
         </div>
+        <div class="history-filters">
+          <div class="field"><label for="histSearch">Search messages</label><input id="histSearch" type="search" placeholder="Name, channel, bot or message ID"></div>
+          <div class="field"><label for="histFilter">Show</label><select id="histFilter"><option value="all">All messages</option><option value="active">Active messages</option><option value="deleted">Deleted messages</option><option value="product">Products</option><option value="section">Sections</option></select></div>
+        </div>
+        <p id="histCount" class="muted small" aria-live="polite"></p>
         <div id="histList" class="hist-list"></div>
       </section>
     </div>
