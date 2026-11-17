@@ -1958,3 +1958,16 @@ pre.json { font-variant-numeric: normal; }
 .preview-size { border: 1px solid var(--border); background: transparent; color: inherit; border-radius: 6px; padding: 5px 9px; cursor: pointer; }
 .preview-size.active { background: #5865f2; color: white; border-color: #5865f2; }
 #previewBody.preview-mobile { max-width: 375px; margin: 0 auto; }
+.dc-video { display: block; width: min(100%, 420px); max-height: 320px; margin-top: 8px; border-radius: 8px; background: #111; }
+.custom-field-order { display: flex; gap: 5px; margin-left: auto; margin-right: 8px; }
+.video-upload-row { gap: 8px; flex-wrap: wrap; }
+.plan-order { display: flex; flex-direction: column; gap: 2px; }
+.plan-order .btn { padding: 1px 6px; line-height: 1.1; }
+/* Keep every plan control available at narrow widths, including reorder. */
+.plan-row { grid-template-columns: 32px minmax(120px, 1.4fr) 70px 90px 90px 34px; }
+@media (max-width: 900px) {
+  .plan-row { grid-template-columns: 32px minmax(0, 1fr) minmax(70px, 1fr) 34px; }
+  .plan-row .plan-old, .plan-row .plan-badge { display: block; }
+  .plan-row .plan-order { grid-row: span 2; }
+  .plan-row .plan-remove { grid-column: 4; grid-row: 1 / span 2; }
+}

@@ -92,6 +92,8 @@ _STYLED_TABLES = {
     "none": {"upper": _range_chars(65, 26), "lower": _range_chars(97, 26),
              "digits": "0123456789"},
     "bold": _alphabet(0x1D400, 0x1D41A, 0x1D7CE),            # mathematical bold
+    "serif_italic": _alphabet(0x1D434, 0x1D44E, lower_map={7: 0x210E}),
+    "serif_bold_italic": _alphabet(0x1D468, 0x1D482),
     "italic": _alphabet(0x1D608, 0x1D622),                   # sans italic
     "bold_italic": _alphabet(0x1D63C, 0x1D656),              # sans bold italic
     "script": _alphabet(0x1D49C, 0x1D4B6, upper_map=_SCRIPT_HOLES,
@@ -118,7 +120,9 @@ _STYLED_TABLES["circled"]["digits"] = chr(0x24EA) + _range_chars(0x2460, 9)
 _STYLE_LABELS = {
     "none": "Normal (no styling)",
     "bold": "Bold",
-    "italic": "Italic",
+    "italic": "Sans Italic",
+    "serif_italic": "Serif Italic",
+    "serif_bold_italic": "Serif Bold Italic",
     "bold_italic": "Bold Italic",
     "script": "Script",
     "bold_script": "Bold Script",
@@ -135,7 +139,7 @@ _STYLE_LABELS = {
 
 # The ids in a stable, human-friendly order (used by the pickers).
 STYLE_ORDER = [
-    "none", "bold", "italic", "bold_italic", "script", "bold_script",
+    "none", "bold", "italic", "bold_italic", "serif_italic", "serif_bold_italic", "script", "bold_script",
     "sans", "sans_bold", "fraktur", "bold_fraktur", "double", "mono", "smallcaps", "fullwidth", "circled",
 ]
 

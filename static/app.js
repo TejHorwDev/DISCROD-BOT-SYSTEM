@@ -177,6 +177,7 @@ function newProduct() {
     license: "",
     features: "",
     customFields: [],
+    videoAttachment: "",
     bulletStyle: "checkmark",
     bulletCustom: "",
     included: "",
@@ -774,6 +775,16 @@ function renderDiscordMessage(payload, identity, body) {
     messageBody.appendChild(embedsBox);
   }
 
+  /* Native video attachment preview; Discord's player may differ. */
+  if (payload.video && /^[A-Za-z0-9._-]+\.(mp4|webm)$/i.test(payload.video)) {
+    const video = el("video", "dc-video");
+    video.controls = true;
+    video.preload = "metadata";
+    video.src = "/uploads/" + encodeURIComponent(payload.video);
+    video.setAttribute("aria-label", "Video attachment preview");
+    messageBody.appendChild(video);
+  }
+
   /* action row components / buttons */
   const components = payload.components || [];
   for (const row of components) {
@@ -1010,6 +1021,7 @@ function renderForm() {
   renderImageSlots();
   renderPlansEditor();
   renderCustomFieldsEditor();
+  renderVideoStatus();
   renderButtonsEditor();
 }
 
@@ -1097,6 +1109,12 @@ function fillThemeSelect(select, firstLabel) {
   }
 }
 
+function renderVideoStatus() {
+  const name = state.product.videoAttachment;
+  $("#videoStatus").textContent = name ? `Attached: ${name}` : "No video attached.";
+  $("#videoRemove").disabled = !name;
+}
+
 /* Extra embed fields belong to the product and are saved with it. */
 function renderCustomFieldsEditor() {
   const holder = $("#customFieldsEditor");
@@ -1108,6 +1126,19 @@ function renderCustomFieldsEditor() {
     const row = el("div", "custom-field-card");
     const header = el("div", "row-between");
     header.appendChild(el("strong", null, `Field ${index + 1}`));
+    const order = el("div", "custom-field-order");
+    for (const [label, delta] of [["↑", -1], ["↓", 1]]) {
+      const move = el("button", "btn btn-sm btn-ghost", label);
+      move.type = "button"; move.title = delta < 0 ? "Move field up" : "Move field down";
+      move.setAttribute("aria-label", `${move.title}: field ${index + 1}`);
+      move.disabled = index + delta < 0 || index + delta >= fields.length;
+      move.addEventListener("click", () => {
+        [fields[index], fields[index + delta]] = [fields[index + delta], fields[index]];
+        renderCustomFieldsEditor(); refreshPreviewSoon();
+      });
+      order.appendChild(move);
+    }
+    header.appendChild(order);
     const remove = el("button", "btn btn-sm btn-danger", "Remove");
     remove.type = "button";
     remove.addEventListener("click", () => { fields.splice(index, 1); renderCustomFieldsEditor(); refreshPreviewSoon(); });
@@ -1142,9 +1173,19 @@ function renderPlansEditor() {
   product.plans.forEach((plan, index) => {
     const row = el("div", "plan-row");
 
-    const grip = el("span", "plan-grip", "\u2630");
-    grip.title = "Plan " + (index + 1);
-    row.appendChild(grip);
+    const order = el("div", "plan-order");
+    for (const [label, delta] of [["↑", -1], ["↓", 1]]) {
+      const move = el("button", "btn btn-sm btn-ghost", label);
+      move.type = "button";
+      move.setAttribute("aria-label", `${delta < 0 ? "Move up" : "Move down"} plan ${index + 1}`);
+      move.disabled = index + delta < 0 || index + delta >= product.plans.length;
+      move.addEventListener("click", () => {
+        [product.plans[index], product.plans[index + delta]] = [product.plans[index + delta], product.plans[index]];
+        renderPlansEditor(); refreshPreviewSoon();
+      });
+      order.appendChild(move);
+    }
+    row.appendChild(order);
 
     const labelInput = el("input", "plan-label");
     labelInput.type = "text";
@@ -2649,6 +2690,30 @@ function bindPreviewToolbar() {
       choice.classList.toggle("active", active);
       choice.setAttribute("aria-pressed", String(active));
     }
+  });
+
+  $("#videoUpload").addEventListener("change", async (event) => {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!/\.(mp4|webm)$/i.test(file.name) || !file.size || file.size > 8 * 1024 * 1024) {
+      showToast("Choose a non-empty MP4 or WEBM video up to 8 MB.", "error"); return;
+    }
+    const product = state.product;
+    const form = new FormData(); form.append("file", file);
+    showToast("Uploading video...");
+    try {
+      const response = await fetch("/api/upload-video", { method: "POST", body: form });
+      const data = await response.json();
+      if (!data.ok) { showToast(data.error || "Video upload failed.", "error"); return; }
+      if (product !== state.product) { showToast("Product changed during upload; select the video again.", "info"); return; }
+      product.videoAttachment = data.filename;
+      renderVideoStatus(); refreshPreviewSoon();
+      showToast("Video attached.", "success");
+    } catch { showToast("Video upload failed. Check that the app is running.", "error"); }
+  });
+  $("#videoRemove").addEventListener("click", () => {
+    state.product.videoAttachment = ""; renderVideoStatus(); refreshPreviewSoon();
   });
 
   /* send buttons */

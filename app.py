@@ -2637,6 +2637,36 @@ def _image_info(path):
     return info
 
 
+# Native video attachments use a conservative limit, independent of a server's
+# Discord boost/upload limit. Header checks are not a full codec validation.
+ALLOWED_VIDEO_EXTENSIONS = {"mp4", "webm"}
+MAX_VIDEO_BYTES = 8 * 1024 * 1024
+
+
+@app.post("/api/upload-video")
+def api_upload_video():
+    file = request.files.get("file")
+    if file is None or not file.filename:
+        return jsonify({"ok": False, "error": "Choose a video first."}), 400
+    original = secure_filename(file.filename) or "video"
+    extension = _extension_of(original)
+    if extension not in ALLOWED_VIDEO_EXTENSIONS:
+        return jsonify({"ok": False, "error": "Only MP4 and WEBM videos are supported."}), 400
+    blob = file.read(MAX_VIDEO_BYTES + 1)
+    if not blob or len(blob) > MAX_VIDEO_BYTES:
+        return jsonify({"ok": False, "error": "The video must be non-empty and no larger than 8 MB."}), 400
+    valid = (extension == "mp4" and len(blob) >= 12 and blob[4:8] == b"ftyp") or (
+        extension == "webm" and blob.startswith(b"\x1a\x45\xdf\xa3"))
+    if not valid:
+        return jsonify({"ok": False, "error": "The file does not look like the selected video format."}), 400
+    stem = original.rsplit(".", 1)[0][:40] or "video"
+    name = f"{stem}_{uuid.uuid4().hex[:10]}.{extension}"
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    with open(os.path.join(UPLOAD_DIR, name), "wb") as out:
+        out.write(blob)
+    return jsonify({"ok": True, "filename": name, "bytes": len(blob)})
+
+
 @app.get("/api/uploads")
 def api_uploads_list():
     """
@@ -2784,8 +2814,9 @@ def resolve_upload_files(names):
             continue
         with open(path, "rb") as handle:
             blob = handle.read()
-        mime = "image/" + ("jpeg" if _extension_of(name) in ("jpg", "jpeg")
-                           else _extension_of(name))
+        ext = _extension_of(name)
+        mime = ("video/" + ext if ext in ALLOWED_VIDEO_EXTENSIONS else
+                "image/" + ("jpeg" if ext in ("jpg", "jpeg") else ext))
         files.append((name, blob, mime))
     return files, missing
 
@@ -2916,10 +2947,10 @@ def send_to_channels(bot_record, client, targets, content, messages, source):
             try:
                 files, missing = resolve_upload_files(message.get("files") or [])
             except OSError as error:
-                problem = f"Could not read an uploaded image: {error}"
+                problem = f"Could not read an uploaded file: {error}"
                 break
             if missing:
-                problem = ("These uploaded images could not be found anymore - "
+                problem = ("These uploaded files could not be found anymore - "
                            "please upload them again: " + ", ".join(missing))
                 break
 
@@ -3340,18 +3371,25 @@ def api_message_update():
             outgoing = {"content": new_message.get("content") or "",
                         "embeds": new_message.get("embeds") or []}
             outgoing["allowed_mentions"] = mention_rules
+            if new_message.get("components"):
+                outgoing["components"] = new_message["components"]
+            else:
+                outgoing["components"] = []
 
             old_attachments = _attachments_of(index) if old_id else []
-            refs = _refs_in(new_message)
-            keep = [a["id"] for a in old_attachments if a.get("filename") in refs]
-            outgoing["attachments"] = [{"id": attachment_id} for attachment_id in keep]
+            refs = _refs_in(new_message) | set(new_message.get("files") or [])
+            kept = [a for a in old_attachments if a.get("filename") in refs]
+            keep_names = {a.get("filename") for a in kept}
+            outgoing["attachments"] = [{"id": a["id"]} for a in kept]
 
-            files, missing = resolve_upload_files(new_message.get("files") or [])
+            files, missing = resolve_upload_files([name for name in (new_message.get("files") or [])
+                                                   if name not in keep_names])
             if missing:
                 return jsonify({"ok": False,
-                                "error": "These uploaded images could not be found "
+                                "error": "These uploaded files could not be found "
                                          "anymore - upload them again: "
                                          + ", ".join(missing)}), 400
+            files_used.extend(a["filename"] for a in kept)
             files_used.extend(f[0] for f in files)
 
             if old_id is None:

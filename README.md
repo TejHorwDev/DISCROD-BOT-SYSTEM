@@ -21,7 +21,7 @@ SELLER BOT just makes sure every listing ends with a clickable
 | **Pricing plans** | One product, many plans: `1 Month Key $4.99`, `3 Months Key $9.99`, `1 Year Key $19.99`, `Lifetime Key $49.99` - each with its own price, optional strike-through "old price" (with automatic `-38% OFF` badge) and a small badge like `POPULAR`. Quick-add buttons for common key lengths. |
 | **Sections (Messenger bot content)** | Announcements, server rules, update logs - anything that is not a product. Four types (Clean / Announcement / Rules / Update), own images, own theme, own sending bot. Three starter sections ship with the app. |
 | **Real theme system** | 12 built-in themes (color bar + Unicode heading style + optional author line + footer), plus the Theme Studio to create your own. Themes never change what a message says - only how it looks. |
-| **14 Unicode heading styles** | Bold, Italic, Bold Italic, Script, Bold Script, Sans Serif, Sans Serif Bold, Fraktur, Bold Fraktur, Double-struck, Monospace, Small Caps, Fullwidth, Circled - applied by the server, shown live in the preview. |
+| **16 Unicode heading styles** | Bold, Italic, Bold Italic, Serif Italic, Serif Bold Italic, Script, Bold Script, Sans Serif, Sans Serif Bold, Fraktur, Bold Fraktur, Double-struck, Monospace, Small Caps, Fullwidth, Circled - applied by the server, shown live in the preview. |
 | **One source of truth rendering** | The page sends a *content model*; `renderer.py` on the server builds the exact Discord payload. The preview shows that payload, and Send posts that payload. What you see is literally what you send. |
 | **Auto-split** | A listing too big for one Discord message? It is automatically split into several embeds and messages (all of Discord's limits enforced), with clear "Message 1 of 2" dividers in the preview. |
 | **Images & GIFs everywhere** | Product banners, thumbnails, 4-image galleries (shown as a Discord grid), section images, an image LIBRARY that remembers every upload for reuse. Pillow verifies every file and smartly shrinks oversized photos (animated GIFs are never touched). |
@@ -101,6 +101,18 @@ The four layout presets change how the same data is arranged:
 * **Minimal** - everything in the description, no fields
 * **Big Banner** - huge price headline at the top
 * **Flash Sale** - red accent, discount + countdown in your face
+
+### Video attachments and arrangement
+In the product Builder, open **Video attachment** to upload one MP4 or WEBM
+video (maximum 8 MB). The video is sent as a native Discord file attachment
+on the final message, not inside the embed. The dashboard previews it with your
+browser's player; Discord playback depends on its supported codecs, client and
+server upload limit. MP4 with H.264 video and AAC audio is recommended. Videos
+are not transcoded or fully codec-validated. Existing image uploads still work.
+
+Use the up/down controls on pricing plans and custom fields to arrange them.
+Videos are stored in `data/uploads` and saved products refer to those files;
+keep that folder with your data and avoid purging uploads you still need.
 
 ### Custom embed fields and preview
 In the Builder, open **Custom embed fields** to add up to 10 extra headings
