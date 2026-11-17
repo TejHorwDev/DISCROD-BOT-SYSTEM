@@ -1759,7 +1759,10 @@ def _clean_product(incoming):
             continue
         label = str(plan.get("label", "")).strip()[:80]
         if not label:
-            continue
+            if any(str(plan.get(key) or "").strip() for key in ("price", "oldPrice", "badge")):
+                label = f"Plan {len(plans) + 1}"
+            else:
+                continue
         plans.append({
             "id": str(plan.get("id") or f"plan-{index + 1}")[:40],
             "label": label,

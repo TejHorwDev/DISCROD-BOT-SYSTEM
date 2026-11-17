@@ -48,5 +48,17 @@ class MessageBuilderTests(unittest.TestCase):
         self.assertTrue(result["ok"], result["errors"])
 
 
+class PricingRegressionTests(unittest.TestCase):
+    def test_unnamed_priced_plan_is_not_dropped(self):
+        content = {"name": "Example", "plans": [{"label": "", "price": "9.99"}], "ticketLineMode": "hide"}
+        normalized = renderer.normalize_content(content)
+        self.assertEqual(normalized["plans"][0]["label"], "Plan 1")
+        self.assertEqual(normalized["plans"][0]["price"], "9.99")
+        result = renderer.render_content(content)
+        self.assertTrue(result["ok"], result["errors"])
+        self.assertTrue(any("9.99" in field["value"] for message in result["messages"]
+                            for embed in message["embeds"] for field in embed.get("fields", [])))
+
+
 if __name__ == "__main__":
     unittest.main()

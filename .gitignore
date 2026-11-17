@@ -23,3 +23,6 @@ data/uploads/*
 data/users/*
 !data/users/.gitkeep
 scratch/
+
+# Optional JavaScript test dependencies
+node_modules/
