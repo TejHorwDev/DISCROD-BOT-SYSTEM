@@ -215,6 +215,8 @@ def normalize_content(content):
     content["ticketLineText"] = str(content.get("ticketLineText") or "").strip()
     content["planLayout"] = content.get("planLayout") if content.get("planLayout") in ("list", "stacked", "grid") else "list"
 
+    content["videoAttachment"] = str(content.get("videoAttachment") or "").strip()
+
     raw_fields = content.get("customFields")
     content["customFields"] = []
     if isinstance(raw_fields, list):
@@ -841,6 +843,10 @@ def render_content(content, bot=None, theme=None, settings=None):
         if char_count(field["value"]) > LIMITS["fieldValue"]:
             errors.append(f"The field \"{(field['name'] or 'list').strip()[:40]}\" is longer than 1024 characters - shorten it.")
 
+    video = content["videoAttachment"] if content["kind"] == "product" else ""
+    if video and (len(video) > 120 or not re.fullmatch(r"[A-Za-z0-9._-]+\.(?:mp4|webm)", video, re.IGNORECASE)):
+        errors.append("The video attachment name is invalid. Please upload the video again.")
+
     # ---- assemble the embeds (with auto-split) ---------------------------
     description = pieces["description"] or ""
     description_parts = _split_description(description) if description else []
@@ -945,6 +951,11 @@ def render_content(content, bot=None, theme=None, settings=None):
                 embed.pop(key)
 
     messages = _pack_into_messages(embeds, content["content"], content.get("buttons"))
+    if video and not any("video attachment name is invalid" in error for error in errors) and messages:
+        # A native Discord attachment, not an embed image. Discord decides whether
+        # a client's codecs and server upload limits allow inline playback.
+        messages[-1]["files"].append(video)
+        messages[-1]["video"] = video  # preview metadata; never sent as a Discord JSON key
     if len(messages) > 1:
         splits.append({"reason": "One Discord message cannot hold all of this - "
                                  "it will be posted as several messages.",

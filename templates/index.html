@@ -466,6 +466,18 @@
             </div>
           </details>
 
+          <details class="section">
+            <summary>🎬 Video attachment</summary>
+            <div class="sec-body">
+              <p class="muted small">Attach one MP4 or WEBM video (up to 8 MB) to the final Discord message. Playback depends on Discord, the video codec and your server's upload limit. MP4 with H.264 video and AAC audio is recommended.</p>
+              <div class="row video-upload-row">
+                <label class="btn btn-ghost">Choose video<input id="videoUpload" type="file" accept="video/mp4,video/webm,.mp4,.webm" hidden></label>
+                <button id="videoRemove" class="btn btn-ghost" type="button">Remove video</button>
+              </div>
+              <p id="videoStatus" class="muted small" aria-live="polite">No video attached.</p>
+            </div>
+          </details>
+
           <!-- ---------- MESSAGE & FOOTER ---------- -->
           <details class="section">
             <summary><span class="sec-n">5</span> Message &amp; footer</summary>
